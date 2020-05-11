@@ -174,8 +174,8 @@ class QuickGui(_SpecialCase, _Url, _OpenDir, QtWidgets.QWidget, general.General,
 
         self._ignore_list = ['__init__.py', 'quickGui', 'html']
 
-        self._module_list = ['global_RG', 'nucleus_RG', 'project_RG', 'qualoth_RG', 'test_RG', 'utils_RG', 'ziva_RG']
-        self._general_module_list = ['utils_RG', 'nucleus_RG', 'resource_RG']
+        self._module_list = ['global_RG', 'nucleus_RG', 'project_RG', 'qualoth_RG', 'test_RG', 'utils_RG', 'ziva_RG', 'external_RG']
+        self._general_module_list = ['utils_RG', 'nucleus_RG', 'external_RG', 'resource_RG', 'wip_RG']
 
         ##################
         ''' WIKI '''
