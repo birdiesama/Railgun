@@ -80,7 +80,7 @@ class SimulationSetup(general.General):
         self.info_nConstraint = ['nConstraint', None]
 
         # SUFFIX
-        self.suffix_cache_in    = 'input'
+        self.suffix_cache_in    = 'iAnim'
         self.suffix_cloth       = 'cloth'
         self.suffix_input_cloth = 'iCloth'
         self.suffix_col         = 'col'
@@ -88,7 +88,6 @@ class SimulationSetup(general.General):
         self.suffix_techAnim_lowRes = 'lowRes'
         self.suffix_techAnim_highRes = 'highRes'
         self.suffix_folDriver = 'folDriver'
-
 
         # OUTPUT
         self.info_techAnim          = ['tech_anim', None]
@@ -115,20 +114,24 @@ class SimulationSetup(general.General):
     def init_hierarchy(self):
 
         top_node = self.create_group(name = self.info_topNode[0], color = self.info_topNode[1])
+        self.lock_hide_attr(top_node)
 
         input   = self.create_group(name = self.info_input[0], color = self.info_input[1], parent = top_node)
         sim     = self.create_group(name = self.info_sim[0], color = self.info_sim[1], parent = top_node)
         output  = self.create_group(name = self.info_output[0], color = self.info_output[1], parent = top_node)
+        self.lock_hide_attr([input, sim, output])
 
         # sim
         utils_grp   = self.create_group(name = self.info_utils[0], parent = sim)
         wrap_grp    = self.create_group(name = self.info_wrap[0], parent = utils_grp)
+        self.lock_hide_attr([utils_grp, wrap_grp])
 
         # output
         techAnim            = self.create_group(name = self.info_techAnim[0], color = self.info_techAnim[1], parent = output)
         techAnim_lowRes     = self.create_group(name = self.info_techAnim_lowRes[0], color = self.info_techAnim_lowRes[1], parent = techAnim)
         techAnim_highRes    = self.create_group(name = self.info_techAnim_highRes[0], color = self.info_techAnim_highRes[1], parent = techAnim)
         publish             = self.create_group(name = self.info_publish[0], color = self.info_publish[1], parent = output)
+        self.lock_hide_attr([techAnim, techAnim_lowRes, techAnim_highRes, publish])
 
         pm.select(clear = True)
 
@@ -159,6 +162,7 @@ class SimulationSetup(general.General):
 
         # duplicate selected geo_grp_list, add suffix, parent to cache_in_grp
         cache_in_grp = self.create_group(name = self.name_cache_in, parent = input)
+        self.lock_hide_attr(cache_in_grp)
 
         for geo_grp in geo_grp_list:
             geo_grp_name = geo_grp.nodeName()
@@ -168,6 +172,7 @@ class SimulationSetup(general.General):
             for tfm in tfm_list:
                 tfm.rename('{0}_{1}'.format(tfm.nodeName(), self.suffix_cache_in))
             pm.parent(dup_geo_grp, cache_in_grp)
+            self.lock_hide_attr(dup_geo_grp)
 
         # coloring cache_in_grp
         color_list = self.mono_color_list
@@ -184,18 +189,20 @@ class SimulationSetup(general.General):
                     color = self.eye_color
             self.assign_poly_shader(target_list = mesh, color_name = color)
 
-    def ssu_create_nRigid(self): # temporary done, but need to select something from hierarchy or else it will not work
+    def ssu_create_nRigid(self):
+        # temporary done, but need to select something from hierarchy or else it will not work
         # must select something from sim rig hierarchy (input, publish)
 
-        # nucleus 1/2
+        # check if nucleus existsnucleus 1/2
         parent_nucleus_stat = None
         nucleus_list = pm.ls(type = 'nucleus')
         if not nucleus_list:
             parent_nucleus_stat = True
 
+        # start operation based on selecion
         selection_list = pm.ls(sl = True)
-        # self.init_output_mesh_cache()
 
+        # set variables
         input   = self.create_group(name = self.info_input[0])
         sim     = self.create_group(name = self.info_sim[0])
         publish = self.create_group(name = self.info_publish[0])
@@ -211,7 +218,6 @@ class SimulationSetup(general.General):
         iCol_grp        = self.create_group(name = self.info_collider_input[0], parent = sim_input_grp)
         nConstraint_grp = self.create_group(name = self.info_nConstraint[0], parent = sim)
 
-
         for selection in selection_list:
 
             name_input_mesh = selection.nodeName()
@@ -221,7 +227,7 @@ class SimulationSetup(general.General):
             input_mesh = pm.PyNode(name_input_mesh + '_' + self.suffix_cache_in)
 
             col_mesh = self.clean_duplicate(selection)
-            self.assign_poly_shader(col_mesh, color_name = 'light_blue')
+            self.assign_poly_shader(col_mesh, color_name = 'orange')
             col_mesh.rename(name_input_mesh + '_' + self.suffix_col)
             pm.parent(col_mesh, collider_grp)
 
@@ -229,31 +235,13 @@ class SimulationSetup(general.General):
             pm.reorder(nRigid_grp, back = True)
 
             iCol_mesh = self.clean_duplicate(selection)
-            self.assign_poly_shader(iCol_mesh, color_name = 'light_blue')
-            iCol_mesh.rename(name_input_mesh + self.suffix_input_col)
+            self.assign_poly_shader(iCol_mesh, color_name = 'orange')
+            iCol_mesh.rename('{0}_{1}'.format(name_input_mesh, self.suffix_input_col))
             pm.parent(iCol_mesh, iCol_grp)
 
             self.quick_blendshape(driver = input_mesh, driven = iCol_mesh)
-            # if self.SHOW == 'LAK':
-            #     iCol_wrap_grp   = self.create_group(name = self.info_collider_input_wrap[0], parent = wrap_grp)
-            #     wrap, wrap_base = self.create_wrap(driver = input_mesh, driven = iCol_mesh)
-            #     pm.parent(wrap_base, iCol_wrap_grp)
-            # else:
-            #     self.quick_blendshape(driver = input_mesh, driven = iCol_mesh)
 
             self.quick_blendshape(driver = iCol_mesh, driven = col_mesh)
-
-            # if pm.objExists(name_input_mesh):
-            #     publish_mesh = pm.PyNode(name_input_mesh)
-            #     publish_deformer = self.quick_blendshape(driver = col_mesh, driven = publish_mesh)
-            #     # if self.SHOW == 'LAK':
-            #     #     publish_wrap_grp   = self.create_group(name = self.info_publish_wrap[0], parent = wrap_grp)
-            #     #     wrap, wrap_base = self.create_wrap(driver = col_mesh, driven = publish_mesh)
-            #     #     publish_deformer = wrap
-            #     #     pm.parent(wrap_base, publish_wrap_grp)
-            #     # else:
-            #     #     publish_deformer = self.quick_blendshape(driver = col_mesh, driven = publish_mesh)
-            #     publish.from_collider_deformer >> publish_deformer.en
 
         # nucleus 2/2
         if parent_nucleus_stat:
@@ -735,6 +723,11 @@ class Gui(QtWidgets.QWidget, ui.UI):
         ssu.ssu_create_nRigid()
         pm.undoInfo(closeChunk = True)
 
+    def create_nCloth_btnCmd(self):
+        pm.undoInfo(openChunk = True)
+        # ssu.ssu_create_nCloth()
+        pm.undoInfo(closeChunk = True)
+
     ####################################################################################
     ####################################################################################
     ####################################################################################
@@ -749,10 +742,7 @@ class Gui(QtWidgets.QWidget, ui.UI):
         # ssu.ssu_create_nHair()
         pm.undoInfo(closeChunk = True)
 
-    def create_nCloth_btnCmd(self):
-        pm.undoInfo(openChunk = True)
-        # ssu.ssu_create_nCloth()
-        pm.undoInfo(closeChunk = True)
+
 
     def set_nucleus_btnCmd(self):
         pm.undoInfo(openChunk = True)

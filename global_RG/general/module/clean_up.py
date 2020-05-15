@@ -64,42 +64,52 @@ class CleanUp(object):
     ''' lock hide attr '''
     ##################
     def lock_hide_attr(self, target, attr_list=None, en=True):
+        
         channelBox_val = not en
         keyable_val = not en
         lock_val = en
-        target = pm.PyNode(target)
 
-        if not attr_list:
-            for attr in ['t', 'r', 's']:
-                for axis in ['x', 'y', 'z']:
-                    if en:
-                        pm.setAttr(target + '.' + attr + axis, keyable = keyable_val)
-                        pm.setAttr(target + '.' + attr + axis, channelBox = channelBox_val)
-                        self.lock_default_attr(target, en = en)
-                    elif not en:
-                        pm.setAttr(target + '.' + attr + axis, channelBox = channelBox_val)
-                        pm.setAttr(target + '.' + attr + axis, keyable = keyable_val)
-                        self.lock_default_attr(target, en = en)
+        # patch
+        target_list = target
+        if not isinstance(target_list, list):
+            target_list = [target_list]
+        target = None
+        
+        for target in target_list:
 
-        else:
-            for attr in attr_list:
-                if attr in ['t', 'r', 's']:
+            target = pm.PyNode(target)
+
+            if not attr_list:
+                for attr in ['t', 'r', 's']:
                     for axis in ['x', 'y', 'z']:
                         if en:
                             pm.setAttr(target + '.' + attr + axis, keyable = keyable_val)
                             pm.setAttr(target + '.' + attr + axis, channelBox = channelBox_val)
+                            self.lock_default_attr(target, en = en)
                         elif not en:
                             pm.setAttr(target + '.' + attr + axis, channelBox = channelBox_val)
                             pm.setAttr(target + '.' + attr + axis, keyable = keyable_val)
-                else:
-                    if en:
-                        pm.setAttr(target + '.' + attr, keyable = keyable_val)
-                        pm.setAttr(target + '.' + attr, channelBox = channelBox_val)
-                    elif not en:
-                        pm.setAttr(target + '.' + attr, channelBox = channelBox_val)
-                        pm.setAttr(target + '.' + attr, keyable = keyable_val)
+                            self.lock_default_attr(target, en = en)
 
-            self.lock_attr(target, attr_list = attr_list, en = en)
+            else:
+                for attr in attr_list:
+                    if attr in ['t', 'r', 's']:
+                        for axis in ['x', 'y', 'z']:
+                            if en:
+                                pm.setAttr(target + '.' + attr + axis, keyable = keyable_val)
+                                pm.setAttr(target + '.' + attr + axis, channelBox = channelBox_val)
+                            elif not en:
+                                pm.setAttr(target + '.' + attr + axis, channelBox = channelBox_val)
+                                pm.setAttr(target + '.' + attr + axis, keyable = keyable_val)
+                    else:
+                        if en:
+                            pm.setAttr(target + '.' + attr, keyable = keyable_val)
+                            pm.setAttr(target + '.' + attr, channelBox = channelBox_val)
+                        elif not en:
+                            pm.setAttr(target + '.' + attr, channelBox = channelBox_val)
+                            pm.setAttr(target + '.' + attr, keyable = keyable_val)
+
+                self.lock_attr(target, attr_list = attr_list, en = en)
 
     def lock_default_attr(self, target, en=True):
         if en: lock = 'lock'
@@ -250,7 +260,6 @@ class CleanUp(object):
         self.delete_history(dup_target)
         self.remove_from_all_set(dup_target)
         self.remove_from_all_layer(dup_target)
-        self.empty_mesh_cache_name_attr(dup_target) # csMeshCache
         if target.getShapes():
             self.delete_non_visible_shape(dup_target)
             if target.getShape().nodeType() == 'mesh':
