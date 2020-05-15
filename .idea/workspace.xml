@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="cc874eed-93ec-470b-953b-8d77c3c86d65" name="Default Changelist" comment="" />
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="PREVIOUS_COMMIT_AUTHORS">
+      <list>
+        <option value="Weerapot Chaoman" />
+      </list>
+    </option>
+    <option name="UPDATE_TYPE" value="REBASE" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectConfigurationFiles">
+    <option name="files">
+      <list>
+        <option value="$PROJECT_DIR$/.idea/Railgun.iml" />
+        <option value="$PROJECT_DIR$/.idea/vcs.xml" />
+        <option value="$PROJECT_DIR$/.idea/misc.xml" />
+        <option value="$PROJECT_DIR$/.idea/modules.xml" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="2139" />
+    <option name="y" value="168" />
+    <option name="width" value="1552" />
+    <option name="height" value="880" />
+  </component>
+  <component name="ProjectView">
+    <navigator proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="Railgun" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Railgun" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Railgun" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Railgun" type="462c0819:PsiDirectoryNode" />
+              <item name="nucleus_RG" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Railgun" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Railgun" type="462c0819:PsiDirectoryNode" />
+              <item name="nucleus_RG" type="462c0819:PsiDirectoryNode" />
+              <item name="physical_motion_mult" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Railgun" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Railgun" type="462c0819:PsiDirectoryNode" />
+              <item name="utils_RG" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Railgun" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Railgun" type="462c0819:PsiDirectoryNode" />
+              <item name="wip_RG" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Railgun" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Railgun" type="462c0819:PsiDirectoryNode" />
+              <item name="wip_RG" type="462c0819:PsiDirectoryNode" />
+              <item name="simulation_setup" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+      <pane id="Scope" />
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
+    <property name="nodejs_npm_path_reset_for_default_project" value="true" />
+    <property name="settings.editor.selected.configurable" value="settings.github" />
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="cc874eed-93ec-470b-953b-8d77c3c86d65" name="Default Changelist" comment="" />
+      <created>1575910998871</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1575910998871</updated>
+      <workItem from="1575911000036" duration="613000" />
+      <workItem from="1588563523276" duration="165000" />
+      <workItem from="1588563825286" duration="955000" />
+      <workItem from="1588564803023" duration="115000" />
+      <workItem from="1588657561543" duration="659000" />
+      <workItem from="1588737722466" duration="190000" />
+      <workItem from="1588826476157" duration="281000" />
+      <workItem from="1589169677530" duration="350000" />
+      <workItem from="1589263024749" duration="214000" />
+      <workItem from="1589444076238" duration="712000" />
+    </task>
+    <task id="LOCAL-00001" summary="tidying up general.core for general use, maya 2020">
+      <created>1588563679086</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1588563679086</updated>
+    </task>
+    <task id="LOCAL-00002" summary="tidying up general.core for general use, maya 2020">
+      <created>1588564847823</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1588564847823</updated>
+    </task>
+    <task id="LOCAL-00003" summary="tidying up ui.core, added physical motion mult, tested with maya 2018">
+      <created>1588657656676</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1588657656676</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Reintegrate &quot;Average Vertex Util&quot; in utils_RG. Tested in Maya 2018">
+      <created>1588737889164</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1588737889164</updated>
+    </task>
+    <task id="LOCAL-00005" summary="- Reintegrate &quot;Color Assignor Outliner&quot; in utils_RG.&#10;- Added 'Disable Color' button&#10;- Tested in Maya 2018">
+      <created>1588826755818</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1588826755818</updated>
+    </task>
+    <task id="LOCAL-00006" summary="- Updated &quot;color_assignor_polygon.core&quot;&#10;- Updated &quot;quick_gui.core&quot;&#10;- Reintegrate &quot;curve_blendshape_cv&quot;, &quot;curve_blendshape_percentage&quot;, &quot;curve_blendshape_rebuild&quot;, &quot;curve_builder&quot; in utils_RG.&#10;- Added 'external_RG' in Railgun&#10;- Added 'comet_rename' in external_RG&#10;- Tested in Maya 2018">
+      <created>1589170015405</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1589170015405</updated>
+    </task>
+    <task id="LOCAL-00007" summary="- Reintegrate &quot;utils&quot;, &quot;utils_camera&quot;, &quot;utils_curve&quot;, and &quot;utils_nucleus&quot; in utils_RG.&#10;- Tested in Maya 2018">
+      <created>1589263228003</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1589263228003</updated>
+    </task>
+    <task id="LOCAL-00008" summary="- Started working on the old version of Simulation Setup in the WIP_RG">
+      <created>1589444197613</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1589444197613</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
+    <servers />
+  </component>
+  <component name="TimeTrackingManager">
+    <option name="totallyTimeSpent" value="4254000" />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="1912" y="-8" width="1936" height="1096" extended-state="6" />
+    <layout>
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.24786781" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info anchor="bottom" id="Run" order="2" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Version Control" order="8" sideWeight="0.49932975" weight="0.32931727" />
+      <window_info anchor="bottom" id="Database Changes" order="9" />
+      <window_info anchor="bottom" id="Event Log" order="10" sideWeight="0.50067025" side_tool="true" visible="true" weight="0.2554517" />
+      <window_info anchor="bottom" id="Terminal" order="11" />
+      <window_info anchor="bottom" id="Python Console" order="12" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="right" id="SciView" order="3" />
+      <window_info anchor="right" id="Database" order="4" />
+    </layout>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="Vcs.Log.History.Properties">
+    <option name="COLUMN_ORDER">
+      <list>
+        <option value="0" />
+        <option value="2" />
+        <option value="3" />
+        <option value="1" />
+      </list>
+    </option>
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="RECENTLY_FILTERED_USER_GROUPS">
+                <collection />
+              </option>
+              <option name="RECENTLY_FILTERED_BRANCH_GROUPS">
+                <collection />
+              </option>
+              <option name="COLUMN_ORDER">
+                <list>
+                  <option value="0" />
+                  <option value="1" />
+                  <option value="2" />
+                  <option value="3" />
+                </list>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="RECENT_FILTERS">
+      <map>
+        <entry key="Branch">
+          <value>
+            <list />
+          </value>
+        </entry>
+        <entry key="User">
+          <value>
+            <list />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="tidying up general.core for general use, maya 2020" />
+    <MESSAGE value="tidying up ui.core, added physical motion mult, tested with maya 2018" />
+    <MESSAGE value="Reintegrate &quot;Average Vertex Util&quot; in utils_RG. Tested in Maya 2018" />
+    <MESSAGE value="- Reintegrate &quot;Color Assignor Outliner&quot; in utils_RG.&#10;- Added 'Disable Color' button&#10;- Tested in Maya 2018" />
+    <MESSAGE value="- Updated &quot;color_assignor_polygon.core&quot;&#10;- Updated &quot;quick_gui.core&quot;&#10;- Reintegrate &quot;curve_blendshape_cv&quot;, &quot;curve_blendshape_percentage&quot;, &quot;curve_blendshape_rebuild&quot;, &quot;curve_builder&quot; in utils_RG.&#10;- Added 'external_RG' in Railgun&#10;- Added 'comet_rename' in external_RG&#10;- Tested in Maya 2018" />
+    <MESSAGE value="- Reintegrate &quot;utils&quot;, &quot;utils_camera&quot;, &quot;utils_curve&quot;, and &quot;utils_nucleus&quot; in utils_RG.&#10;- Tested in Maya 2018" />
+    <MESSAGE value="- Started working on the old version of Simulation Setup in the WIP_RG" />
+    <option name="LAST_COMMIT_MESSAGE" value="- Started working on the old version of Simulation Setup in the WIP_RG" />
+  </component>
+</project>
