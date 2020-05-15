@@ -72,73 +72,11 @@ class OnTheFly(object): # test area
         pm.sets('cluster1Set', fe = selection)
         pm.sets('cluster1Set', remove = selection)
 
-def maya_main_window():
-    main_window_ptr = mui.MQtUtil.mainWindow()
-    return QtCompat.wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
+
 
 gen = general.General()
 
-class GUI(ui.UI, QtWidgets.QWidget):
-
-    def __init__(self, parent = maya_main_window(), *args, **kwargs):
-
-        super(GUI, self).__init__(parent)
-
-        self._ui = 'physical_motion_mult_ui'
-        self._width = 300.00
-        self._height = 100.00
-        self._version = __Version__
-        self._title_name = 'Physical Motion Mult'
-        self._title = '{titleName} v{version}'.format(titleName=self._title_name, version=self._version)
-
-        self.delete_UI(self._ui)
-
-        self.setObjectName(self._ui)
-        self.resize(self._width, self._height)
-        self.setWindowTitle(self._title)
-        self.setWindowFlags(QtCore.Qt.Window)
-
-        self.main_QVBoxLayout = self.create_QVBoxLayout(parent = self)
-        self.gui_init()
-
-    def gui_init(self):
-
-        bake_QGridLayout = self.create_QGridLayout(parent = self.main_QVBoxLayout)
-        bake_step_floatField = self.create_floatField(label = 'Step', precision = 2, parent = bake_QGridLayout, co = (0, 0))
-        bake_QPushButton = self.create_QPushButton(text = 'Bake', parent = bake_QGridLayout, co = (0, 1), cmd = self.bake_btnCmd)
-        self.bake_step_floatField = bake_step_floatField
-
-        self.create_separator(parent = self.main_QVBoxLayout)
-
-        connect_motionMult_QPushButton = self.create_QPushButton(
-            text = 'Connect Motion Mult', parent = self.main_QVBoxLayout, cmd = self.connect_mm_btnCmd,
-            )
-
-        self.create_separator(parent = self.main_QVBoxLayout)
-
-        input_cluster_QVBoxLayout = self.create_QVBoxLayout(parent = self.main_QVBoxLayout)
-        input_cluster_QLabel = self.create_QLabel(text = 'input_cluster', parent = input_cluster_QVBoxLayout)
-        input_cluster_QLabel.setAlignment(QtCore.Qt.AlignCenter)
-        input_cluster_buttons_QGridLayout = self.create_QGridLayout(parent = input_cluster_QVBoxLayout)
-        input_cluster_add_QPushButton = self.create_QPushButton(
-            text = 'Add', parent = input_cluster_buttons_QGridLayout, co = (0, 0), cmd = self.input_cluster_add_btnCmd,
-            )
-        input_cluster_remove_QPushButton = self.create_QPushButton(
-            text = 'Remove', parent = input_cluster_buttons_QGridLayout, co = (0, 1), cmd = self.input_cluster_remove_btnCmd,
-            )
-
-        self.create_separator(parent = self.main_QVBoxLayout)
-
-        output_cluster_QVBoxLayout = self.create_QVBoxLayout(parent = self.main_QVBoxLayout)
-        output_cluster_QLabel = self.create_QLabel(text = 'output_cluster', parent = output_cluster_QVBoxLayout)
-        output_cluster_QLabel.setAlignment(QtCore.Qt.AlignCenter)
-        output_cluster_buttons_QGridLayout = self.create_QGridLayout(parent = output_cluster_QVBoxLayout)
-        output_cluster_add_QPushButton = self.create_QPushButton(
-            text = 'Add', parent = output_cluster_buttons_QGridLayout, co = (0, 0), cmd = self.output_cluster_add_btnCmd)
-        output_cluster_remove_QPushButton = self.create_QPushButton(
-            text = 'Remove', parent = output_cluster_buttons_QGridLayout, co = (0, 1), cmd = self.output_cluster_remove_btnCmd)
-
-class PhysicalMotionMult(GUI):
+class PhysicalMotionMult(object):
 
     def __init__(self):
 
@@ -433,6 +371,72 @@ class PhysicalMotionMult(GUI):
 
         return(input_tfm, staticRef_tfm)
 
+pmm = PhysicalMotionMult()
+
+def maya_main_window():
+    main_window_ptr = mui.MQtUtil.mainWindow()
+    return QtCompat.wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
+
+class Gui(QtWidgets.QWidget, ui.UI):
+
+    def __init__(self, parent = maya_main_window(), *args, **kwargs):
+
+        super(Gui, self).__init__(parent)
+
+        self._ui = 'physical_motion_mult_ui'
+        self._width = 300.00
+        self._height = 100.00
+        self._version = __Version__
+        self._title_name = 'Physical Motion Mult'
+        self._title = '{titleName} v{version}'.format(titleName=self._title_name, version=self._version)
+
+        self.delete_UI(self._ui)
+
+        self.setObjectName(self._ui)
+        self.resize(self._width, self._height)
+        self.setWindowTitle(self._title)
+        self.setWindowFlags(QtCore.Qt.Window)
+
+        self.main_QVBoxLayout = self.create_QVBoxLayout(parent = self)
+        self.gui_init()
+
+    def gui_init(self):
+
+        bake_QGridLayout = self.create_QGridLayout(parent = self.main_QVBoxLayout)
+        bake_step_floatField = self.create_floatField(label = 'Step', precision = 2, parent = bake_QGridLayout, co = (0, 0))
+        bake_QPushButton = self.create_QPushButton(text = 'Bake', parent = bake_QGridLayout, co = (0, 1), cmd = pmm.bake_btnCmd)
+        self.bake_step_floatField = bake_step_floatField
+
+        self.create_separator(parent = self.main_QVBoxLayout)
+
+        connect_motionMult_QPushButton = self.create_QPushButton(
+            text = 'Connect Motion Mult', parent = self.main_QVBoxLayout, cmd = pmm.connect_mm_btnCmd,
+            )
+
+        self.create_separator(parent = self.main_QVBoxLayout)
+
+        input_cluster_QVBoxLayout = self.create_QVBoxLayout(parent = self.main_QVBoxLayout)
+        input_cluster_QLabel = self.create_QLabel(text = 'input_cluster', parent = input_cluster_QVBoxLayout)
+        input_cluster_QLabel.setAlignment(QtCore.Qt.AlignCenter)
+        input_cluster_buttons_QGridLayout = self.create_QGridLayout(parent = input_cluster_QVBoxLayout)
+        input_cluster_add_QPushButton = self.create_QPushButton(
+            text = 'Add', parent = input_cluster_buttons_QGridLayout, co = (0, 0), cmd = pmm.input_cluster_add_btnCmd,
+            )
+        input_cluster_remove_QPushButton = self.create_QPushButton(
+            text = 'Remove', parent = input_cluster_buttons_QGridLayout, co = (0, 1), cmd = pmm.input_cluster_remove_btnCmd,
+            )
+
+        self.create_separator(parent = self.main_QVBoxLayout)
+
+        output_cluster_QVBoxLayout = self.create_QVBoxLayout(parent = self.main_QVBoxLayout)
+        output_cluster_QLabel = self.create_QLabel(text = 'output_cluster', parent = output_cluster_QVBoxLayout)
+        output_cluster_QLabel.setAlignment(QtCore.Qt.AlignCenter)
+        output_cluster_buttons_QGridLayout = self.create_QGridLayout(parent = output_cluster_QVBoxLayout)
+        output_cluster_add_QPushButton = self.create_QPushButton(
+            text = 'Add', parent = output_cluster_buttons_QGridLayout, co = (0, 0), cmd = pmm.output_cluster_add_btnCmd)
+        output_cluster_remove_QPushButton = self.create_QPushButton(
+            text = 'Remove', parent = output_cluster_buttons_QGridLayout, co = (0, 1), cmd = pmm.output_cluster_remove_btnCmd)
+
 def run():
-    pmm = PhysicalMotionMult()
-    pmm.show()
+    gui = Gui()
+    gui.show()
