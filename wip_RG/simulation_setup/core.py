@@ -220,7 +220,6 @@ class SimulationSetup(general.General):
 
             input_mesh = pm.PyNode(name_input_mesh + '_' + self.suffix_cache_in)
 
-
             col_mesh = self.clean_duplicate(selection)
             self.assign_poly_shader(col_mesh, color_name = 'light_blue')
             col_mesh.rename(name_input_mesh + '_' + self.suffix_col)
