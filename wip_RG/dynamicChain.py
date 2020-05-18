@@ -1,3 +1,4 @@
+'''
 import maya.cmds as cmds
 import unittest
 import MASH.api as mapi
@@ -48,3 +49,4 @@ cmds.flushIdleQueue()
 #playblast
 cmds.playbackOptions( animationEndTime='5sec')
 cmds.playblast(format="qt", viewer=True, p=100 )
+'''
