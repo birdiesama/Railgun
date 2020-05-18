@@ -73,3 +73,20 @@ class Create(object):
             display_layer.overrideColorRGB.set(rgb)
             display_layer.overrideRGBColors.set(True)
         return(display_layer)
+
+    def create_namespace(self, name=None):
+        # doesn't create anything if no name
+        if name:
+            if not pm.namespace(exists = name):
+                pm.namespace(add = name)
+        return(name)
+
+    def create_locator(self, name=None):
+        if name:
+            if not pm.objExists(name):
+                locator = pm.spaceLocator(n = name, p = [0, 0, 0])
+        else:
+            locator = pm.spaceLocat(p = [0, 0, 0])
+        return(locator)
+
+

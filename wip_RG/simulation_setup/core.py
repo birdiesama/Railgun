@@ -59,8 +59,11 @@ class SimulationSetup(general.General):
         self.info_output        = ['OUTPUT', 'green'] # 'OUTPUT_SIM_GRP'
         self.info_output_layer  = ['_OUTPUT_', 'green'] # '_output_sim_'
 
+        # namespace
+        self.namespace_input = 'input'
+        self.namespace_output = 'output'
+
         # INPUT
-        #self.name_mesh_cache    = 'input_anim_meshcache'
         self.name_cache_in      = 'input_anim'
 
         self.info_sim_input         = ['sim_input', None]
@@ -97,8 +100,7 @@ class SimulationSetup(general.General):
         self.info_publish           = ['publish', 'green']
         self.info_publish_wrap      = ['publish_wrap', None]
 
-        self.name_rig_set           = 'rig_set'
-        self.name_mesh_cache_set    = 'meshcache_set'
+        self.name_publish_set   = 'publish_set'
 
         # RegEx
         self.skin_color = 'skin'
@@ -146,13 +148,17 @@ class SimulationSetup(general.General):
         OUTPUT_layer.visibility.set(False)
 
         # set
-        rig_set = self.create_set(name = self.name_rig_set)
-        pm.sets(rig_set, add = top_node)
+        publish_set = self.create_set(name = self.name_publish_set)
+        pm.sets(publish_set, add = top_node)
 
     def init_geo_grp(self, geo_grp_list=None):
 
-        input   = self.create_group(name = self.info_input[0])
+        input = self.create_group(name = self.info_input[0])
         publish = self.create_group(name = self.info_publish[0])
+        utils_grp = self.create_group(name = self.info_utils[0])
+
+        namespace_input = self.create_namespace(self.namespace_input)
+        namespace_output = self.create_namespace(self.namespace_output)
 
         self.skin_color = 'skin'
         self.eye_color = 'white'
@@ -160,34 +166,58 @@ class SimulationSetup(general.General):
         self.eye_regex = re.compile(r'eye|pupil|len', re.IGNORECASE)
         self.eye_exception_regex = re.compile(r'eyelash|eyebrow', re.IGNORECASE)
 
-        # duplicate selected geo_grp_list, add suffix, parent to cache_in_grp
+        # create publish_set
+        publish_set = self.create_set(name = self.name_publish_set)
+
         cache_in_grp = self.create_group(name = self.name_cache_in, parent = input)
         self.lock_hide_attr(cache_in_grp)
 
+        # duplicate selected geo group, for input and output
         for geo_grp in geo_grp_list:
+
             geo_grp_name = geo_grp.nodeName()
-            dup_geo_grp = pm.duplicate(geo_grp)[0]
-            dup_geo_grp.rename('{0}_{1}'.format(geo_grp_name, self.suffix_cache_in))
-            tfm_list = dup_geo_grp.listRelatives(ad = True, type = 'transform')
-            for tfm in tfm_list:
-                tfm.rename('{0}_{1}'.format(tfm.nodeName(), self.suffix_cache_in))
-            pm.parent(dup_geo_grp, cache_in_grp)
-            self.lock_hide_attr(dup_geo_grp)
+            
+            input_geo_grp = pm.duplicate(geo_grp)[0]
+            output_geo_grp = pm.duplicate(geo_grp)[0]
 
-        # coloring cache_in_grp
-        color_list = self.mono_color_list
-        shuffle(color_list)
-        mesh_shape_list = pm.listRelatives(cache_in_grp, ad = True, type = 'mesh')
-        mesh_list = pm.listRelatives(mesh_shape_list, parent = True)
-        mesh_list = list(set(mesh_list))
+            for dup_geo_grp, namespace in zip([input_geo_grp, output_geo_grp], [namespace_input, namespace_output]):
+                dup_geo_grp.rename('{0}:{1}'.format(namespace, geo_grp_name))
+                tfm_list = dup_geo_grp.listRelatives(ad = True, type = 'transform')
+                tfm_list = list(set(tfm_list))        
+                for tfm in tfm_list:
+                    tfm.rename('{0}:{1}'.format(namespace, tfm.nodeName()))
 
-        for i in range(0, len(mesh_list)):
-            mesh = mesh_list[i]
-            color = color_list[i%len(color_list)]
-            if self.eye_regex.findall(str(mesh)):
-                if not self.eye_exception_regex.findall(str(mesh)):
-                    color = self.eye_color
-            self.assign_poly_shader(target_list = mesh, color_name = color)
+            pm.parent(input_geo_grp, cache_in_grp)
+            pm.parent(output_geo_grp, publish)
+            self.lock_hide_attr([input_geo_grp, output_geo_grp])
+
+        # coloring geo_grp
+        for geo_grp, color_list in zip([cache_in_grp, publish], [self.mono_color_list, self.color_list]):
+
+            shuffle(color_list)
+            mesh_shape_list = pm.listRelatives(geo_grp, ad = True, type = 'mesh')
+            mesh_list = pm.listRelatives(mesh_shape_list, parent = True)
+            mesh_list = list(set(mesh_list))
+
+            for i in range(0, len(mesh_list)):
+                mesh = mesh_list[i]
+                color = color_list[i%len(color_list)]
+                if self.body_regex.findall(str(mesh)):
+                    if geo_grp != cache_in_grp:
+                        color = self.skin_color
+                    else:
+                        pass
+                elif self.eye_regex.findall(mesh.nodeName()):
+                    if not self.eye_exception_regex.findall(mesh.nodeName()):
+                        color = self.eye_color
+                self.assign_poly_shader(target_list = mesh, color_name = color)
+
+        # create cache_in_rivet -- for nucleus motion mult
+        cache_in_loc = self.create_locator(name = '{0}_loc'.format(self.name_cache_in))
+
+        for axis in ['x', 'y', 'z']:
+            exec("cache_in_grp.boundingBoxCenter{0} >> cache_in_loc.t{1}".format(axis.upper(), axis))
+        pm.parent(cache_in_loc, utils_grp)
 
     def ssu_create_nRigid(self):
         # temporary done, but need to select something from hierarchy or else it will not work
@@ -252,53 +282,47 @@ class SimulationSetup(general.General):
         pm.reorder(nConstraint_grp, back = True)
         pm.reorder(utils_grp, back = True)
 
-    def init_output_mesh_cache(self):
+    # def init_output_mesh_cache(self):
 
-        if not pm.objExists(self.name_mesh_cache_set):
+    #     if not pm.objExists(self.name_mesh_cache_set):
 
-            publish = self.create_group(name = self.info_publish[0])
+    #         publish = self.create_group(name = self.info_publish[0])
 
-            rig_set = self.create_set(name = self.name_rig_set)
-            mesh_cache_set = self.create_set(name = self.name_mesh_cache_set)
-            pm.sets(rig_set, edit = True, fe = mesh_cache_set)
+    #         publish_set = self.create_set(name = self.name_publish_set)
+    #         mesh_cache_set = self.create_set(name = self.name_mesh_cache_set)
+    #         pm.sets(publish_set, edit = True, fe = mesh_cache_set)
 
-            # get existing object set to see which one was created during the extract
-            existing_object_set_list = pm.ls(type = 'objectSet')
+    #         # get existing object set to see which one was created during the extract
+    #         existing_object_set_list = pm.ls(type = 'objectSet')
 
-            # assuming there's only 1 mesh cache in the scene
-            mesh_cache_proxy = pm.ls(type = 'csMeshProxy')[0]
-            output_extract  = self.extract_geo_from_mesh_cache(mesh_cache_proxy = mesh_cache_proxy, parent = publish)
+    #         # assuming there's only 1 mesh cache in the scene
+    #         mesh_cache_proxy = pm.ls(type = 'csMeshProxy')[0]
+    #         output_extract  = self.extract_geo_from_mesh_cache(mesh_cache_proxy = mesh_cache_proxy, parent = publish)
 
-            pm.sets(mesh_cache_set, edit = True, fe = output_extract)
-            # if self.SHOW == 'LAK':
-            #     for node in output_extract:
-            #         if node.nodeName() == 'geo':
-            #             pm.sets(mesh_cache_set, edit = True, fe = node.getChildren())
-            # else:
-            #     pm.sets(mesh_cache_set, edit = True, fe = output_extract)
+    #         pm.sets(mesh_cache_set, edit = True, fe = output_extract)
 
-            # deleting the excess object set
-            new_object_set_list = pm.ls(type = 'objectSet')
-            for object_set in new_object_set_list:
-                if object_set not in existing_object_set_list:
-                    pm.delete(object_set)
+    #         # deleting the excess object set
+    #         new_object_set_list = pm.ls(type = 'objectSet')
+    #         for object_set in new_object_set_list:
+    #             if object_set not in existing_object_set_list:
+    #                 pm.delete(object_set)
 
-            # coloring output extract
-            color_list = self.color_list
-            shuffle(color_list)
-            mesh_shape_list = pm.listRelatives(output_extract, ad = True, type = 'mesh')
-            mesh_list = pm.listRelatives(mesh_shape_list, parent = True)
-            mesh_list = list(set(mesh_list))
+    #         # coloring output extract
+    #         color_list = self.color_list
+    #         shuffle(color_list)
+    #         mesh_shape_list = pm.listRelatives(output_extract, ad = True, type = 'mesh')
+    #         mesh_list = pm.listRelatives(mesh_shape_list, parent = True)
+    #         mesh_list = list(set(mesh_list))
 
-            for i in range(0, len(mesh_list)):
-                mesh = mesh_list[i]
-                color = color_list[i%len(color_list)]
-                if self.body_regex.findall(str(mesh)):
-                    color = self.skin_color
-                elif self.eye_regex.findall(str(mesh)):
-                    if not self.eye_exception_regex.findall(str(mesh)):
-                        color = self.eye_color
-                self.assign_poly_shader(target_list = mesh, color_name = color)
+    #         for i in range(0, len(mesh_list)):
+    #             mesh = mesh_list[i]
+    #             color = color_list[i%len(color_list)]
+    #             if self.body_regex.findall(str(mesh)):
+    #                 color = self.skin_color
+    #             elif self.eye_regex.findall(str(mesh)):
+    #                 if not self.eye_exception_regex.findall(str(mesh)):
+    #                     color = self.eye_color
+    #             self.assign_poly_shader(target_list = mesh, color_name = color)
 
     def init_nucleus(self):
 
@@ -321,8 +345,6 @@ class SimulationSetup(general.General):
                 expression = 'startFrame = `playbackOptions -q -min`;'
                 pm.expression(object = nucleus, string = expression)
 
-
-
     def ssu_create_nCloth(self):
 
         selection_list = pm.ls(sl = True)
@@ -333,7 +355,8 @@ class SimulationSetup(general.General):
         if not nucleus_list:
             parent_nucleus_stat = True
 
-        self.init_output_mesh_cache()
+        # self.init_output_mesh_cache()
+        # duplicate the whole output instead.
 
         input           = self.create_group(name = self.info_input[0])
         sim             = self.create_group(name = self.info_sim[0])
