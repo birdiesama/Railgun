@@ -85,8 +85,74 @@ class Create(object):
         if name:
             if not pm.objExists(name):
                 locator = pm.spaceLocator(n = name, p = [0, 0, 0])
+            else:
+                locator = pm.PyNode(name)
         else:
             locator = pm.spaceLocat(p = [0, 0, 0])
         return(locator)
+
+    def create_mdv(self, name=None, mode=None):
+        mode_dict = {}
+        mode_dict['no operation'] = 0
+        mode_dict['multiply'] = 1
+        mode_dict['divide'] = 2
+        mode_dict['power'] = 3
+
+        if name:
+            if not pm.objExists(name):
+                mdv = pm.createNode('multiplyDivide', n = name)
+            else:
+                mdv = pm.PyNode(name)
+        else:
+            mdv = pm.createNode('multiplyDivide')
+        
+        if mode:
+            if type(mode) == type('str'):
+                mode = mode_dict[mode]
+            mdv.op.set(mode)
+
+        return(mdv)
+
+    def create_pma(self, name=None, mode=None):
+        mode_dict = {}
+        mode_dict['no operation'] = 0
+        mode_dict['sum'] = 1
+        mode_dict['add'] = 1
+        mode_dict['subtract'] = 2
+        mode_dict['minus'] = 2
+        mode_dict['average'] = 3
+
+        if name:
+            if not pm.objExists(name):
+                pma = pm.createNode('plusMinusAverage', n = name)
+            else:
+                pma = pm.PyNode(name)
+        else:
+            pma = pm.createNode('plusMinusAverage')
+
+        if mode:
+            if type(mode) == type('str'):
+                mode = mode_dict[mode]
+            pma.op.set(mode)
+        
+        return(pma)
+
+    def create_clamp(self, name=None, max=None, min=None):
+
+        if name:
+            if not pm.objExists(name):
+                clamp = pm.createNode('clamp', n = name)
+            else:
+                clamp = pm.PyNode(name)
+        if max:
+            clamp.max.set(max, max, max)
+        if min:
+            clamp.min.set(min, min, min)
+
+        return(clamp)
+  
+
+
+
 
 

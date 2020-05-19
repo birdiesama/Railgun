@@ -51,13 +51,16 @@ class SimulationSetup(general.General):
         self.info_topNode   = ['cfx', None]
 
         self.info_input         = ['INPUT', 'orange'] # 'INPUT_ANIM_GRP'
-        self.info_input_layer   = ['_INPUT_', 'orange'] # '_input_anim_'
+        self.info_input_attr    = ['INPUT', 'orange']
+        # self.info_input_layer   = ['_INPUT_', 'orange'] # '_input_anim_'
 
         self.info_sim           = ['SIM', 'light_blue'] # 'SIMULATION_GRP'
-        self.info_sim_layer     = ['_SIM_', 'light_blue'] # '_simulation_'
+        self.info_sim_attr      = ['SIM', 'light_blue']
+        # self.info_sim_layer     = ['_SIM_', 'light_blue'] # '_simulation_'
 
         self.info_output        = ['OUTPUT', 'green'] # 'OUTPUT_SIM_GRP'
-        self.info_output_layer  = ['_OUTPUT_', 'green'] # '_output_sim_'
+        self.info_output_attr   = ['OUTPUT', 'green']
+        # self.info_output_layer  = ['_OUTPUT_', 'green'] # '_output_sim_'
 
         # namespace
         self.namespace_input = 'input'
@@ -74,6 +77,7 @@ class SimulationSetup(general.General):
         self.info_nHair_input       = ['nHair_input', None]
 
         # SIM
+        self.info_solver    = ['solver', None]
         self.info_collider  = ['collider', None]
         self.info_nRigid    = ['nRigid', None]
         self.info_cloth     = ['cloth', None]
@@ -117,13 +121,89 @@ class SimulationSetup(general.General):
 
         top_node = self.create_group(name = self.info_topNode[0], color = self.info_topNode[1])
         self.lock_hide_attr(top_node)
+        
+        ### add main attributes on top_node ###
 
+        # __solver__
+        top_node.addAttr('__solver__', keyable = True, attributeType = 'enum', enumName = '======:')
+        top_node.__solver__.lock()
+
+        top_node.addAttr('enable', keyable = True, attributeType = 'bool', dv = 0)
+        top_node.addAttr('start_frame', keyable = True, attributeType = 'float', dv = 0)
+
+        if pm.getAttr(top_node.start_frame, settable = True):
+            expression = 'start_frame = `playbackOptions -q -min`;'
+            pm.expression(object = top_node, string = expression)
+
+        top_node.addAttr('preroll_amount', keyable = True, attributeType = 'float', dv = 10, min = 0)
+        top_node.addAttr('tPose_en', keyable = True, attributeType = 'float', max = 1, min = 0, dv = 1)
+        top_node.addAttr('tPose_val', keyable = True, attributeType = 'float', max = 1, min = 0, dv = 1)
+
+        # create node network for tPose_val
+        preroll_en_1_val_pma = self.create_pma(name = 'preroll_en_1_val_pma', mode = 'minus')
+        preroll_en_2_indiv_val_mdv = self.create_mdv(name = 'preroll_en_2_indiv_val_mdv', mode = 'divide')
+        preroll_en_2_indiv_val_pma = self.create_pma(name = 'preroll_en_2_indiv_val_pma', mode = 'minus')
+        preroll_en_3_final_val_mdv = self.create_mdv(name = 'preroll_en_3_final_val_mdv', mode = 'multiply')
+        preroll_en_3_final_val_clamp = self.create_clamp(name = 'preroll_en_3_final_val_clamp', max = 1, min = 0)
+        
+        time_node = pm.ls(type = 'time')[0]
+
+        preroll_en_1_val_pma.input2D[0].input2Dx.set(1)
+        preroll_en_3_final_val_mdv.ox >> preroll_en_1_val_pma.input2D[1].input2Dx
+        preroll_en_1_val_pma.output2D.output2Dx >> preroll_en_3_final_val_clamp.ipr
+        preroll_en_3_final_val_clamp.opr >> top_node.tPose_val
+        top_node.tPose_val.lock()
+
+        preroll_en_2_indiv_val_mdv.i1x.set(1)
+        top_node.preroll_amount >> preroll_en_2_indiv_val_mdv.i2x
+
+        time_node.outTime >> preroll_en_2_indiv_val_pma.input2D[0].input2Dx
+        top_node.start_frame >> preroll_en_2_indiv_val_pma.input2D[1].input2Dx
+
+        preroll_en_2_indiv_val_mdv.ox >> preroll_en_3_final_val_mdv.i1x
+        preroll_en_2_indiv_val_pma.output2D.output2Dx >> preroll_en_3_final_val_mdv.i2x
+
+        if pm.getAttr(top_node.tPose_val, settable = True):
+            expression = 'tPose_val = (1/`playbackOptions -q -min`;'
+            pm.expression(object = top_node, string = expression)
+
+        # __visibility__
+        top_node.addAttr('__visibility__', keyable = True, attributeType = 'enum', enumName = '======:')
+        top_node.__visibility__.lock()
+        top_node.addAttr(self.info_input_attr[0], keyable = True, attributeType = 'bool', dv = 0)
+        top_node.addAttr(self.info_sim_attr[0], keyable = True, attributeType = 'bool', dv = 1)
+        top_node.addAttr(self.info_output_attr[0], keyable = True, attributeType = 'bool', dv = 0)
+
+        # __motion_mult__
+        top_node.addAttr('__motion_mult__', keyable = True, attributeType = 'enum', enumName = '======:')
+        top_node.__motion_mult__.lock()
+        top_node.addAttr('reference', keyable = True, attributeType = 'enum', enumName = 'link this to string:')
+        top_node.addAttr('mm_reference', keyable = True, dataType = 'string')
+        top_node.addAttr('mm_translate', keyable = True, attributeType = 'float', dv = 1)
+        top_node.addAttr('mm_tx', keyable = True, attributeType = 'float', dv = 1)
+        top_node.addAttr('mm_ty', keyable = True, attributeType = 'float', dv = 1)
+        top_node.addAttr('mm_tz', keyable = True, attributeType = 'float', dv = 1)
+        top_node.addAttr('mm_rotate', keyable = True, attributeType = 'float', dv = 1)
+        top_node.addAttr('mm_rx', keyable = True, attributeType = 'float', dv = 1)
+        top_node.addAttr('mm_ry', keyable = True, attributeType = 'float', dv = 1)
+        top_node.addAttr('mm_rz', keyable = True, attributeType = 'float', dv = 1)
+
+        ### MAIN groups ###
         input   = self.create_group(name = self.info_input[0], color = self.info_input[1], parent = top_node)
         sim     = self.create_group(name = self.info_sim[0], color = self.info_sim[1], parent = top_node)
         output  = self.create_group(name = self.info_output[0], color = self.info_output[1], parent = top_node)
         self.lock_hide_attr([input, sim, output])
 
+        top_node_attr_input = pm.PyNode('{0}.{1}'.format(top_node.nodeName(), self.info_input_attr[0]))
+        top_node_attr_sim = pm.PyNode('{0}.{1}'.format(top_node.nodeName(), self.info_sim_attr[0]))
+        top_node_attr_output = pm.PyNode('{0}.{1}'.format(top_node.nodeName(), self.info_output_attr[0]))
+
+        pm.connectAttr(top_node_attr_input, input.v)
+        pm.connectAttr(top_node_attr_sim, sim.v)
+        pm.connectAttr(top_node_attr_output, output.v)
+
         # sim
+        solver_grp  = self.create_group(name = self.info_solver[0], parent = sim)
         utils_grp   = self.create_group(name = self.info_utils[0], parent = sim)
         wrap_grp    = self.create_group(name = self.info_wrap[0], parent = utils_grp)
         self.lock_hide_attr([utils_grp, wrap_grp])
@@ -138,25 +218,28 @@ class SimulationSetup(general.General):
         pm.select(clear = True)
 
         # layer
-        OUTPUT_layer    = self.create_display_layer(name = self.info_output_layer[0], rgb = self.info_output_layer[1])
-        OUTPUT_layer.v >> output.v
-        SIM_layer       = self.create_display_layer(name = self.info_sim_layer[0], rgb = self.info_sim_layer[1])
-        SIM_layer.v >> sim.v
-        INPUT_layer     = self.create_display_layer(name = self.info_input_layer[0], rgb = self.info_input_layer[1])
-        INPUT_layer.v >> input.v
+        # OUTPUT_layer = self.create_display_layer(name = self.info_output_layer[0], rgb = self.info_output_layer[1])
+        # OUTPUT_layer.v >> output.v
+        # SIM_layer = self.create_display_layer(name = self.info_sim_layer[0], rgb = self.info_sim_layer[1])
+        # SIM_layer.v >> sim.v
+        # INPUT_layer = self.create_display_layer(name = self.info_input_layer[0], rgb = self.info_input_layer[1])
+        # INPUT_layer.v >> input.v
 
-        OUTPUT_layer.visibility.set(False)
+        # OUTPUT_layer.visibility.set(False)
 
         # set
         publish_set = self.create_set(name = self.name_publish_set)
-        pm.sets(publish_set, add = top_node)
+        pm.sets(publish_set, add = publish)
 
     def init_geo_grp(self, geo_grp_list=None):
 
+        # initiate groups
         input = self.create_group(name = self.info_input[0])
         publish = self.create_group(name = self.info_publish[0])
         utils_grp = self.create_group(name = self.info_utils[0])
+        solver_grp = self.create_group(name = self.info_solver[0])
 
+        # add name space
         namespace_input = self.create_namespace(self.namespace_input)
         namespace_output = self.create_namespace(self.namespace_output)
 
@@ -212,12 +295,16 @@ class SimulationSetup(general.General):
                         color = self.eye_color
                 self.assign_poly_shader(target_list = mesh, color_name = color)
 
-        # create cache_in_rivet -- for nucleus motion mult
+        # create cache_in_rivet -- for default nucleus motion mult
         cache_in_loc = self.create_locator(name = '{0}_loc'.format(self.name_cache_in))
 
         for axis in ['x', 'y', 'z']:
             exec("cache_in_grp.boundingBoxCenter{0} >> cache_in_loc.t{1}".format(axis.upper(), axis))
         pm.parent(cache_in_loc, utils_grp)
+
+        # create blend color and attributes
+        # addAttr('from_collider_deformer', keyable = True, attributeType = 'float', max = 1, min = 0, dv = 1)
+
 
     def ssu_create_nRigid(self):
         # temporary done, but need to select something from hierarchy or else it will not work
