@@ -81,7 +81,7 @@ class Create(object):
                 pm.namespace(add = name)
         return(name)
 
-    def create_locator(self, name=None):
+    def create_locator(self, name=None, parent=None):
         if name:
             if not pm.objExists(name):
                 locator = pm.spaceLocator(n = name, p = [0, 0, 0])
@@ -89,6 +89,11 @@ class Create(object):
                 locator = pm.PyNode(name)
         else:
             locator = pm.spaceLocat(p = [0, 0, 0])
+
+        if parent: # parent
+            if locator.getParent() != parent:
+                pm.parent(locator, parent)
+
         return(locator)
 
     def create_mdv(self, name=None, mode=None):

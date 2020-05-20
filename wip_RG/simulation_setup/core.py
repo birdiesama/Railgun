@@ -78,6 +78,7 @@ class SimulationSetup(general.General):
 
         # SIM
         self.info_solver    = ['solver', None]
+        self.name_solver_mm_ref = 'solver_mm_ref'
         self.info_collider  = ['collider', None]
         self.info_nRigid    = ['nRigid', None]
         self.info_cloth     = ['cloth', None]
@@ -122,6 +123,29 @@ class SimulationSetup(general.General):
         top_node = self.create_group(name = self.info_topNode[0], color = self.info_topNode[1])
         self.lock_hide_attr(top_node)
         
+        ### MAIN groups ###
+        input   = self.create_group(name = self.info_input[0], color = self.info_input[1], parent = top_node)
+        sim     = self.create_group(name = self.info_sim[0], color = self.info_sim[1], parent = top_node)
+        output  = self.create_group(name = self.info_output[0], color = self.info_output[1], parent = top_node)
+        self.lock_hide_attr([input, sim, output])
+
+        # sim
+        solver_grp  = self.create_group(name = self.info_solver[0], parent = sim)
+        utils_grp   = self.create_group(name = self.info_utils[0], parent = sim)
+        wrap_grp    = self.create_group(name = self.info_wrap[0], parent = utils_grp)
+        self.lock_hide_attr([utils_grp, wrap_grp])
+
+        # output
+        techAnim            = self.create_group(name = self.info_techAnim[0], color = self.info_techAnim[1], parent = output)
+        techAnim_lowRes     = self.create_group(name = self.info_techAnim_lowRes[0], color = self.info_techAnim_lowRes[1], parent = techAnim)
+        techAnim_highRes    = self.create_group(name = self.info_techAnim_highRes[0], color = self.info_techAnim_highRes[1], parent = techAnim)
+        publish             = self.create_group(name = self.info_publish[0], color = self.info_publish[1], parent = output)
+        self.lock_hide_attr([techAnim, techAnim_lowRes, techAnim_highRes, publish])
+
+        # set
+        publish_set = self.create_set(name = self.name_publish_set)
+        pm.sets(publish_set, add = publish)
+
         ### add main attributes on top_node ###
 
         # __solver__
@@ -140,28 +164,28 @@ class SimulationSetup(general.General):
         top_node.addAttr('tPose_val', keyable = True, attributeType = 'float', max = 1, min = 0, dv = 1)
 
         # create node network for tPose_val
-        preroll_en_1_val_pma = self.create_pma(name = 'preroll_en_1_val_pma', mode = 'minus')
-        preroll_en_2_indiv_val_mdv = self.create_mdv(name = 'preroll_en_2_indiv_val_mdv', mode = 'divide')
-        preroll_en_2_indiv_val_pma = self.create_pma(name = 'preroll_en_2_indiv_val_pma', mode = 'minus')
-        preroll_en_3_final_val_mdv = self.create_mdv(name = 'preroll_en_3_final_val_mdv', mode = 'multiply')
-        preroll_en_3_final_val_clamp = self.create_clamp(name = 'preroll_en_3_final_val_clamp', max = 1, min = 0)
+        preroll_en_1_indiv_val_mdv = self.create_mdv(name = 'preroll_en_1_indiv_val_mdv', mode = 'divide')
+        preroll_en_1_indiv_val_pma = self.create_pma(name = 'preroll_en_1_indiv_val_pma', mode = 'minus')
+        preroll_en_2_sum_val_mdv = self.create_mdv(name = 'preroll_en_2_sum_val_mdv', mode = 'multiply')
+        preroll_en_3_raw_val_pma = self.create_pma(name = 'preroll_en_3_raw_val_pma', mode = 'minus')
+        preroll_en_4_final_val_clamp = self.create_clamp(name = 'preroll_en_4_final_val_clamp', max = 1, min = 0)
         
         time_node = pm.ls(type = 'time')[0]
 
-        preroll_en_1_val_pma.input2D[0].input2Dx.set(1)
-        preroll_en_3_final_val_mdv.ox >> preroll_en_1_val_pma.input2D[1].input2Dx
-        preroll_en_1_val_pma.output2D.output2Dx >> preroll_en_3_final_val_clamp.ipr
-        preroll_en_3_final_val_clamp.opr >> top_node.tPose_val
+        preroll_en_3_raw_val_pma.input2D[0].input2Dx.set(1)
+        preroll_en_2_sum_val_mdv.ox >> preroll_en_3_raw_val_pma.input2D[1].input2Dx
+        preroll_en_3_raw_val_pma.output2D.output2Dx >> preroll_en_4_final_val_clamp.ipr
+        preroll_en_4_final_val_clamp.opr >> top_node.tPose_val
         top_node.tPose_val.lock()
 
-        preroll_en_2_indiv_val_mdv.i1x.set(1)
-        top_node.preroll_amount >> preroll_en_2_indiv_val_mdv.i2x
+        preroll_en_1_indiv_val_mdv.i1x.set(1)
+        top_node.preroll_amount >> preroll_en_1_indiv_val_mdv.i2x
 
-        time_node.outTime >> preroll_en_2_indiv_val_pma.input2D[0].input2Dx
-        top_node.start_frame >> preroll_en_2_indiv_val_pma.input2D[1].input2Dx
+        time_node.outTime >> preroll_en_1_indiv_val_pma.input2D[0].input2Dx
+        top_node.start_frame >> preroll_en_1_indiv_val_pma.input2D[1].input2Dx
 
-        preroll_en_2_indiv_val_mdv.ox >> preroll_en_3_final_val_mdv.i1x
-        preroll_en_2_indiv_val_pma.output2D.output2Dx >> preroll_en_3_final_val_mdv.i2x
+        preroll_en_1_indiv_val_mdv.ox >> preroll_en_2_sum_val_mdv.i1x
+        preroll_en_1_indiv_val_pma.output2D.output2Dx >> preroll_en_2_sum_val_mdv.i2x
 
         if pm.getAttr(top_node.tPose_val, settable = True):
             expression = 'tPose_val = (1/`playbackOptions -q -min`;'
@@ -174,26 +198,6 @@ class SimulationSetup(general.General):
         top_node.addAttr(self.info_sim_attr[0], keyable = True, attributeType = 'bool', dv = 1)
         top_node.addAttr(self.info_output_attr[0], keyable = True, attributeType = 'bool', dv = 0)
 
-        # __motion_mult__
-        top_node.addAttr('__motion_mult__', keyable = True, attributeType = 'enum', enumName = '======:')
-        top_node.__motion_mult__.lock()
-        top_node.addAttr('reference', keyable = True, attributeType = 'enum', enumName = 'link this to string:')
-        top_node.addAttr('mm_reference', keyable = True, dataType = 'string')
-        top_node.addAttr('mm_translate', keyable = True, attributeType = 'float', dv = 1)
-        top_node.addAttr('mm_tx', keyable = True, attributeType = 'float', dv = 1)
-        top_node.addAttr('mm_ty', keyable = True, attributeType = 'float', dv = 1)
-        top_node.addAttr('mm_tz', keyable = True, attributeType = 'float', dv = 1)
-        top_node.addAttr('mm_rotate', keyable = True, attributeType = 'float', dv = 1)
-        top_node.addAttr('mm_rx', keyable = True, attributeType = 'float', dv = 1)
-        top_node.addAttr('mm_ry', keyable = True, attributeType = 'float', dv = 1)
-        top_node.addAttr('mm_rz', keyable = True, attributeType = 'float', dv = 1)
-
-        ### MAIN groups ###
-        input   = self.create_group(name = self.info_input[0], color = self.info_input[1], parent = top_node)
-        sim     = self.create_group(name = self.info_sim[0], color = self.info_sim[1], parent = top_node)
-        output  = self.create_group(name = self.info_output[0], color = self.info_output[1], parent = top_node)
-        self.lock_hide_attr([input, sim, output])
-
         top_node_attr_input = pm.PyNode('{0}.{1}'.format(top_node.nodeName(), self.info_input_attr[0]))
         top_node_attr_sim = pm.PyNode('{0}.{1}'.format(top_node.nodeName(), self.info_sim_attr[0]))
         top_node_attr_output = pm.PyNode('{0}.{1}'.format(top_node.nodeName(), self.info_output_attr[0]))
@@ -202,34 +206,44 @@ class SimulationSetup(general.General):
         pm.connectAttr(top_node_attr_sim, sim.v)
         pm.connectAttr(top_node_attr_output, output.v)
 
-        # sim
-        solver_grp  = self.create_group(name = self.info_solver[0], parent = sim)
-        utils_grp   = self.create_group(name = self.info_utils[0], parent = sim)
-        wrap_grp    = self.create_group(name = self.info_wrap[0], parent = utils_grp)
-        self.lock_hide_attr([utils_grp, wrap_grp])
+        # __solver_motion_mult__
+        top_node.addAttr('__solver_motion_mult__', keyable = True, attributeType = 'enum', enumName = '======:')
+        top_node.__solver_motion_mult__.lock()
+        top_node.addAttr('smm_translate', keyable = True, attributeType = 'float', dv = 1)
+        top_node.addAttr('smm_tx', keyable = True, attributeType = 'float', dv = 1)
+        top_node.addAttr('smm_ty', keyable = True, attributeType = 'float', dv = 1)
+        top_node.addAttr('smm_tz', keyable = True, attributeType = 'float', dv = 1)
+        top_node.addAttr('smm_rotate', keyable = True, attributeType = 'float', dv = 1)
+        top_node.addAttr('smm_rx', keyable = True, attributeType = 'float', dv = 1)
+        top_node.addAttr('smm_ry', keyable = True, attributeType = 'float', dv = 1)
+        top_node.addAttr('smm_rz', keyable = True, attributeType = 'float', dv = 1)
 
-        # output
-        techAnim            = self.create_group(name = self.info_techAnim[0], color = self.info_techAnim[1], parent = output)
-        techAnim_lowRes     = self.create_group(name = self.info_techAnim_lowRes[0], color = self.info_techAnim_lowRes[1], parent = techAnim)
-        techAnim_highRes    = self.create_group(name = self.info_techAnim_highRes[0], color = self.info_techAnim_highRes[1], parent = techAnim)
-        publish             = self.create_group(name = self.info_publish[0], color = self.info_publish[1], parent = output)
-        self.lock_hide_attr([techAnim, techAnim_lowRes, techAnim_highRes, publish])
+        # create solver motion mult network, with locator as a reference point
+
+        solver_mm_ref = self.create_locator(name = self.name_solver_mm_ref, parent = utils_grp)
+
+        smm_t_1_indiv_amp_mdv = self.create_mdv(name = 'smm_t_1_indiv_amp_mdv', mode = 'multiply')
+        smm_t_2_glob_amp_mdv = self.create_mdv(name = 'smm_t_2_glob_amp_mdv', mode = 'multiply')
+        smm_t_3_final_val_pma = self.create_pma(name = 'smm_t_3_final_val_pma', mode = 'minus')
+
+        smm_r_1_indiv_amp_mdv = self.create_mdv(name = 'smm_r_1_indiv_amp_mdv', mode = 'multiply')
+        smm_r_2_glob_amp_mdv = self.create_mdv(name = 'smm_r_2_glob_amp_mdv', mode = 'multiply')
+        smm_r_3_final_val_pma = self.create_pma(name = 'smm_r_3_final_val_pma', mode = 'minus')
+
+        for axis in ['x', 'y', 'z']:
+            for attr, attribute in zip(['t', 'r'], ['translate', 'rotate']):
+                exec('solver_mm_ref.{0}{1} >> smm_{0}_1_indiv_amp_mdv.i1{1}'.format(attr, axis))
+                exec('top_node.smm_{0}{1} >> smm_{0}_1_indiv_amp_mdv.i2{1}'.format(attr, axis))
+
+                exec('smm_{0}_1_indiv_amp_mdv.o{1} >> smm_{0}_2_glob_amp_mdv.i1{1}'.format(attr, axis))
+                exec('top_node.smm_{2} >> smm_{0}_2_glob_amp_mdv.i2{1}'.format(attr, axis, attribute))               
+
+                exec('solver_mm_ref.{0}{1} >> smm_{0}_3_final_val_pma.input3D[0].input3D{1}'.format(attr, axis))
+                exec('smm_{0}_2_glob_amp_mdv.o{1} >> smm_{0}_3_final_val_pma.input3D[1].input3D{1}'.format(attr, axis))
+
+                exec('smm_{0}_3_final_val_pma.output3D.output3D{1} >> solver_grp.{0}{1}'.format(attr, axis))
 
         pm.select(clear = True)
-
-        # layer
-        # OUTPUT_layer = self.create_display_layer(name = self.info_output_layer[0], rgb = self.info_output_layer[1])
-        # OUTPUT_layer.v >> output.v
-        # SIM_layer = self.create_display_layer(name = self.info_sim_layer[0], rgb = self.info_sim_layer[1])
-        # SIM_layer.v >> sim.v
-        # INPUT_layer = self.create_display_layer(name = self.info_input_layer[0], rgb = self.info_input_layer[1])
-        # INPUT_layer.v >> input.v
-
-        # OUTPUT_layer.visibility.set(False)
-
-        # set
-        publish_set = self.create_set(name = self.name_publish_set)
-        pm.sets(publish_set, add = publish)
 
     def init_geo_grp(self, geo_grp_list=None):
 
