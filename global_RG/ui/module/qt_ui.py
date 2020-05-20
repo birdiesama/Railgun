@@ -210,7 +210,7 @@ class Qt_UI(object):
                 QGridLayout.setColumnStretch(i, cwp[i] / nc_sum * 100)
         return(QGridLayout)
 
-    def create_QLabel(self, ui_name=None, text=None, parent=None, co=None, alignment=None):
+    def create_QLabel(self, ui_name=None, text=None, parent=None, co=None, alignment=None, word_wrap=None):
         QLabel = QtWidgets.QLabel()
         if ui_name:
             QLabel.setObjectName(ui_name)
@@ -220,6 +220,8 @@ class Qt_UI(object):
             self.parent_QtWidgets(parent, QLabel, co = co)
         if alignment:
             QLabel.setAlignment(alignment)
+        if word_wrap:
+            QLabel.setWordWrap(True)
         return(QLabel)
 
     def create_QPushButton(self, ui_name=None, text=None, parent=None, co=None, url=None, cmd=None, c=None, bgc=None):

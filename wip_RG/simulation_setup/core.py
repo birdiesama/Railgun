@@ -770,64 +770,91 @@ class Gui(QtWidgets.QWidget, ui.UI):
 
         self.main_layout = self.create_QVBoxLayout(parent = self)
         
-        self.create_nRigid_label = self.create_QLabel(text = 'Select geometry group(s)', parent = self.main_layout, alignment = QtCore.Qt.AlignLeft)
-        self.create_base_rig_btn = self.create_QPushButton(text = 'Create Base Rig', parent = self.main_layout, c = self.create_base_rig_btnCmd)
+        self.base_rig_create_QLabel = self.create_QLabel(text = 'Select geometry group(s)', parent = self.main_layout, alignment = QtCore.Qt.AlignLeft)
+        
+        self.base_rig_info_QLayout = self.create_QGridLayout(w = self._width, nc = 2, cwp = (70, 30), parent = self.main_layout)
+        self.base_rig_info_QLineEdit = self.create_QLineEdit(parent = self.base_rig_info_QLayout, co = (0, 0))
+        self.base_rig_info_QPushButton = self.create_QPushButton(parent = self.base_rig_info_QLayout, co = (0, 1))
+        
+        self.base_rig_create_QPushButton = self.create_QPushButton(text = 'Create Base Rig', parent = self.main_layout, c = self.create_base_rig_btnCmd)
 
-        self.create_separator(parent = self.main_layout)
+        # self.create_separator(parent = self.main_layout)
 
-        self.nDynamic_label = self.create_QLabel(text = 'nDynamic', parent = self.main_layout, alignment = QtCore.Qt.AlignCenter)
-        font = self.nDynamic_label.font()
-        font.setPointSize(15)
-        font.setBold(True)
-        self.nDynamic_label.setFont(font)
+        # self.create_ref_loc_label = self.create_QLabel(
+        #     text = 'Create locator, move it to the position where you want motion mult/tpose to reference to',
+        #     parent = self.main_layout, alignment = QtCore.Qt.AlignLeft, word_wrap = True)
+        # self.create_ref_loc_btn = self.create_QPushButton(text = 'Create Ref Loc', parent = self.main_layout)
 
-        self.create_separator(parent = self.main_layout)
-        self.nDynamic_label = self.create_QLabel(text = 'Passive Collider', parent = self.main_layout, alignment = QtCore.Qt.AlignCenter)
-        font = self.nDynamic_label.font()
-        font.setPointSize(10)
-        font.setBold(True)
-        self.nDynamic_label.setFont(font)
+        # self.attach_ref_loc_label = self.create_QLabel(
+        #     text = 'Select input:geometry that you want to attach ref loc to',
+        #     parent = self.main_layout, alignment = QtCore.Qt.AlignLeft, word_wrap = True)
+        # self.attach_ref_loc_btn = self.create_QPushButton(text = 'Attach Ref Loc', parent = self.main_layout)
 
-        self.create_nRigid_label = self.create_QLabel(text = 'Select mesh(es) from "anim_input_extract" or "publish" group.', parent = self.main_layout, alignment = QtCore.Qt.AlignLeft)
-        self.create_nRigid_btn = self.create_QPushButton(text = 'Create Passive Collider', parent = self.main_layout, c = self.create_nRigid_btnCmd)
+        # self.nDynamic_label = self.create_QLabel(text = 'nDynamic', parent = self.main_layout, alignment = QtCore.Qt.AlignCenter)
+        # font = self.nDynamic_label.font()
+        # font.setPointSize(15)
+        # font.setBold(True)
+        # self.nDynamic_label.setFont(font)
 
-        self.create_separator(parent = self.main_layout)
-        self.nDynamic_label = self.create_QLabel(text = 'nCloth', parent = self.main_layout, alignment = QtCore.Qt.AlignCenter)
-        font = self.nDynamic_label.font()
-        font.setPointSize(10)
-        font.setBold(True)
-        self.nDynamic_label.setFont(font)
+        # self.create_separator(parent = self.main_layout)
+        # self.nDynamic_label = self.create_QLabel(text = 'Passive Collider', parent = self.main_layout, alignment = QtCore.Qt.AlignCenter)
+        # font = self.nDynamic_label.font()
+        # font.setPointSize(10)
+        # font.setBold(True)
+        # self.nDynamic_label.setFont(font)
 
-        self.create_QLabel(text = 'skirt_geo            ', parent = self.main_layout, alignment = QtCore.Qt.AlignLeft)
-        self.create_QLabel(text = 'skirt_geo_highRes', parent = self.main_layout, alignment = QtCore.Qt.AlignLeft)
-        self.create_QLabel(text = '    L skirt_geo', parent = self.main_layout, alignment = QtCore.Qt.AlignLeft)
-        self.create_QLabel(text = '    L skirt_button_geo', parent = self.main_layout, alignment = QtCore.Qt.AlignLeft)
-        self.create_nCloth_btn = self.create_QPushButton(text = 'Create nCloth', parent = self.main_layout, c = self.create_nCloth_btnCmd)
+        # self.create_nRigid_label = self.create_QLabel(text = 'Select mesh(es) from "anim_input_extract" or "publish" group.', parent = self.main_layout, alignment = QtCore.Qt.AlignLeft)
+        # self.create_nRigid_btn = self.create_QPushButton(text = 'Create Passive Collider', parent = self.main_layout, c = self.create_nRigid_btnCmd)
 
-        self.create_separator(parent = self.main_layout)
-        self.nDynamic_label = self.create_QLabel(text = 'nHair', parent = self.main_layout, alignment = QtCore.Qt.AlignCenter)
-        font = self.nDynamic_label.font()
-        font.setPointSize(10)
-        font.setBold(True)
-        self.nDynamic_label.setFont(font)
+        # self.create_separator(parent = self.main_layout)
+        # self.nDynamic_label = self.create_QLabel(text = 'nCloth', parent = self.main_layout, alignment = QtCore.Qt.AlignCenter)
+        # font = self.nDynamic_label.font()
+        # font.setPointSize(10)
+        # font.setBold(True)
+        # self.nDynamic_label.setFont(font)
 
-        self.create_QLabel(text = 'Select XGen Description(s)', parent = self.main_layout)
-        self.create_curve_from_guide_btn = self.create_QPushButton(text = 'Create Curve from Guide (XGen)', parent = self.main_layout, c = self.create_curve_from_guide_btnCmd)
+        # self.create_QLabel(text = 'skirt_geo            ', parent = self.main_layout, alignment = QtCore.Qt.AlignLeft)
+        # self.create_QLabel(text = 'skirt_geo_highRes', parent = self.main_layout, alignment = QtCore.Qt.AlignLeft)
+        # self.create_QLabel(text = '    L skirt_geo', parent = self.main_layout, alignment = QtCore.Qt.AlignLeft)
+        # self.create_QLabel(text = '    L skirt_button_geo', parent = self.main_layout, alignment = QtCore.Qt.AlignLeft)
+        # self.create_nCloth_btn = self.create_QPushButton(text = 'Create nCloth', parent = self.main_layout, c = self.create_nCloth_btnCmd)
 
-        self.create_QLabel(text = 'Select curve group(s), then collider', parent = self.main_layout)
-        self.create_nHair_btn = self.create_QPushButton(text = 'Create nHair', parent = self.main_layout, c = self.create_nHair_btnCmd)
+        # self.create_separator(parent = self.main_layout)
+        # self.nDynamic_label = self.create_QLabel(text = 'nHair', parent = self.main_layout, alignment = QtCore.Qt.AlignCenter)
+        # font = self.nDynamic_label.font()
+        # font.setPointSize(10)
+        # font.setBold(True)
+        # self.nDynamic_label.setFont(font)
 
-        self.create_separator(parent = self.main_layout)
-        self.nDynamic_label = self.create_QLabel(text = 'Nucleus', parent = self.main_layout, alignment = QtCore.Qt.AlignCenter)
-        font = self.nDynamic_label.font()
-        font.setPointSize(10)
-        font.setBold(True)
-        self.nDynamic_label.setFont(font)
+        # self.create_QLabel(text = 'Select XGen Description(s)', parent = self.main_layout)
+        # self.create_curve_from_guide_btn = self.create_QPushButton(text = 'Create Curve from Guide (XGen)', parent = self.main_layout, c = self.create_curve_from_guide_btnCmd)
 
-        self.set_nucleus_label = self.create_QLabel(text = "Select nucleus/nuclei (or it will set every nucleus in the scene).", parent = self.main_layout, alignment = QtCore.Qt.AlignLeft)
-        self.set_nucleus_btn = self.create_QPushButton(text = 'Set Nucleus', parent = self.main_layout, c = self.set_nucleus_btnCmd)
+        # self.create_QLabel(text = 'Select curve group(s), then collider', parent = self.main_layout)
+        # self.create_nHair_btn = self.create_QPushButton(text = 'Create nHair', parent = self.main_layout, c = self.create_nHair_btnCmd)
+
+        # self.create_separator(parent = self.main_layout)
+        # self.nDynamic_label = self.create_QLabel(text = 'Nucleus', parent = self.main_layout, alignment = QtCore.Qt.AlignCenter)
+        # font = self.nDynamic_label.font()
+        # font.setPointSize(10)
+        # font.setBold(True)
+        # self.nDynamic_label.setFont(font)
+
+        # self.set_nucleus_label = self.create_QLabel(text = "Select nucleus/nuclei (or it will set every nucleus in the scene).", parent = self.main_layout, alignment = QtCore.Qt.AlignLeft)
+        # self.set_nucleus_btn = self.create_QPushButton(text = 'Set Nucleus', parent = self.main_layout, c = self.set_nucleus_btnCmd)
 
         # nConstraint
+
+        self.create_separator(parent = self.main_layout)
+
+        ####################
+        '''Save Load''' 
+        ####################
+
+        self.save_load_QLayout = self.create_QGridLayout(w = self._width, nc = 2, parent = self.main_layout)
+        self.save_QPushButton = self.create_QPushButton(text = 'Save', parent = self.save_load_QLayout, co = (0, 0))
+        self.load_QPushButton = self.create_QPushButton(text = 'Load', parent = self.save_load_QLayout, co = (0, 1))
+
+
         self.main_layout.setAlignment(QtCore.Qt.AlignTop)
 
     ####################################################################################
