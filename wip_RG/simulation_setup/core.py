@@ -272,6 +272,7 @@ class SimulationSetup(general.General):
         # duplicate selected geo group, for input and output
         for geo_grp in geo_grp_list:
 
+            geo_grp = pm.PyNode(geo_grp)
             geo_grp_name = geo_grp.nodeName()
             
             input_geo_grp = pm.duplicate(geo_grp)[0]
@@ -751,7 +752,7 @@ class Gui(QtWidgets.QWidget, ui.UI):
 
         self._ui            = 'ui_simulation_set_up_util'
         self._width         = 400.00
-        self._height        = 400.00
+        self._height        = 10.00
         self._title_name    = 'Simulation Setup Util'
         self._title         = '{title_name} v{version}'.format(title_name = self._title_name, version = __Version__)
 
@@ -770,19 +771,57 @@ class Gui(QtWidgets.QWidget, ui.UI):
 
         self.main_layout = self.create_QVBoxLayout(parent = self)
         
-        self.base_rig_create_QLabel = self.create_QLabel(text = 'Select geometry group(s)', parent = self.main_layout, alignment = QtCore.Qt.AlignLeft)
+        ########## BASE RIG ##########
+
+        self.base_rig_label = self.create_QLabel(text = 'Select geometry group(s)', parent = self.main_layout, alignment = QtCore.Qt.AlignLeft, word_wrap = True)
         
-        self.base_rig_info_QLayout = self.create_QGridLayout(w = self._width, nc = 2, cwp = (70, 30), parent = self.main_layout)
-        self.base_rig_info_QLineEdit = self.create_QLineEdit(parent = self.base_rig_info_QLayout, co = (0, 0))
-        self.base_rig_info_QPushButton = self.create_QPushButton(parent = self.base_rig_info_QLayout, co = (0, 1))
-        
-        self.base_rig_create_QPushButton = self.create_QPushButton(text = 'Create Base Rig', parent = self.main_layout, c = self.create_base_rig_btnCmd)
+        self.base_rig_info_layout = self.create_QGridLayout(w = self._width, nc = 2, cwp = (80, 20), parent = self.main_layout)
+        self.base_rig_info_list = self.create_QListWidget(parent = self.base_rig_info_layout, min_h = 10, ams = True, co = (0, 0))
+
+        self.base_rig_info_btn_layout = self.create_QVBoxLayout(parent = self.base_rig_info_layout, co = (0, 1))
+        self.base_rig_info_add_btn = self.create_QPushButton(parent = self.base_rig_info_btn_layout, expanding = True, text = 'Add', c = self.base_rig_info_add_btnCmd)
+        self.base_rig_info_remove_btn = self.create_QPushButton(parent = self.base_rig_info_btn_layout, expanding = True, text = 'Remove', c = self.base_rig_info_remove_btnCmd)
+        self.base_rig_info_clear_btn = self.create_QPushButton(parent = self.base_rig_info_btn_layout, expanding = True, text = 'Clear', c = self.base_rig_info_clear_btnCmd)
+
+        self.base_rig_create_btn = self.create_QPushButton(text = 'Create Base Rig', parent = self.main_layout, c = self.base_rig_create_btnCmd)
+
+        self.create_separator(parent = self.main_layout)
+
+        ########## REFERENCE ##########
+
+        text = 'Select 2 edges on the geometry from cfx|INPUT|input_anim that you want motion_mult, t_pose to reference to'
+        self.reference_label = self.create_QLabel(text = text, parent = self.main_layout, alignment = QtCore.Qt.AlignLeft, word_wrap = True)
+
+        self.create_QLabel(text = ' ', parent = self.main_layout, alignment = QtCore.Qt.AlignLeft, word_wrap = True)
+
+        self.reference_lineEdit_layout = self.create_QGridLayout(w = self._width, nc = 3, cwp = (60, 20, 20), parent = self.main_layout)
+
+        self.reference_tfm_label = self.create_QLabel(text = 'Transform', parent = self.reference_lineEdit_layout, alignment = QtCore.Qt.AlignCenter, word_wrap = True, co = (0, 0))
+        self.reference_edge1_label = self.create_QLabel(text = 'Edge 1', parent = self.reference_lineEdit_layout, alignment = QtCore.Qt.AlignCenter, word_wrap = True, co = (0, 1))
+        self.reference_edge2_label = self.create_QLabel(text = 'Edge 2', parent = self.reference_lineEdit_layout, alignment = QtCore.Qt.AlignCenter, word_wrap = True, co = (0, 2))
+
+        self.reference_tfm_lineEdit = self.create_QLineEdit(read_only = True, parent = self.reference_lineEdit_layout, co = (1, 0))
+        self.reference_edge1_lineEdit = self.create_QLineEdit(read_only = True, parent = self.reference_lineEdit_layout, co = (1, 1))
+        self.reference_edge2_lineEdit = self.create_QLineEdit(read_only = True, parent = self.reference_lineEdit_layout, co = (1, 2))
+
+        self.reference_getInfo_btn_layout = self.create_QGridLayout(w = self._width, nc = 2, cwp = (60, 40), parent = self.main_layout)
+        self.reference_getInfo_btn = self.create_QPushButton(parent = self.reference_getInfo_btn_layout, text = 'Get edges', c = '', co = (0, 1))
+
+        self.reference_create_btn = self.create_QPushButton(parent = self.main_layout, text = 'Create reference rivet', c = '')
+
+        self.create_separator(parent = self.main_layout)
+
+        ########## SAVE / LOAD ##########
+
+        self.save_load_layout = self.create_QGridLayout(w = self._width, nc = 3, parent = self.main_layout)
+        self.save_btn = self.create_QPushButton(text = 'Save', parent = self.save_load_layout, co = (0, 0))
+        self.load_btn = self.create_QPushButton(text = 'Load', parent = self.save_load_layout, co = (0, 1))
+        self.clear_btn = self.create_QPushButton(text = 'Clear', parent = self.save_load_layout, co = (0, 2))
+
+        self.main_layout.setAlignment(QtCore.Qt.AlignTop)
 
         # self.create_separator(parent = self.main_layout)
 
-        # self.create_ref_loc_label = self.create_QLabel(
-        #     text = 'Create locator, move it to the position where you want motion mult/tpose to reference to',
-        #     parent = self.main_layout, alignment = QtCore.Qt.AlignLeft, word_wrap = True)
         # self.create_ref_loc_btn = self.create_QPushButton(text = 'Create Ref Loc', parent = self.main_layout)
 
         # self.attach_ref_loc_label = self.create_QLabel(
@@ -844,30 +883,53 @@ class Gui(QtWidgets.QWidget, ui.UI):
 
         # nConstraint
 
-        self.create_separator(parent = self.main_layout)
-
-        ####################
-        '''Save Load''' 
-        ####################
-
-        self.save_load_QLayout = self.create_QGridLayout(w = self._width, nc = 2, parent = self.main_layout)
-        self.save_QPushButton = self.create_QPushButton(text = 'Save', parent = self.save_load_QLayout, co = (0, 0))
-        self.load_QPushButton = self.create_QPushButton(text = 'Load', parent = self.save_load_QLayout, co = (0, 1))
-
-
-        self.main_layout.setAlignment(QtCore.Qt.AlignTop)
+        
 
     ####################################################################################
     ####################################################################################
     ####################################################################################
 
-    def create_base_rig_btnCmd(self):
+    ########## BASE RIG FUNCTION ##########
+
+    def base_rig_info_add_btnCmd(self):
+        selection_list = pm.ls(sl = True)
+        selection_list.sort()
+
+        item_list = self.get_QListWidget_items(self.base_rig_info_list)
+        for selection in selection_list:
+            if selection.fullPath() not in item_list:
+                self.base_rig_info_list.addItem(selection.fullPath())
+
+        self.base_rig_info_list.sortItems()
+
+    def base_rig_info_remove_btnCmd(self):
+
+        selection_list = self.get_QListWidget_selectedItem(self.base_rig_info_list, raw = True)
+        for selection in selection_list:
+            (self.base_rig_info_list.takeItem(self.base_rig_info_list.row(selection)))
+
+    def base_rig_info_clear_btnCmd(self):
+        self.base_rig_info_list.clear()
+
+    def base_rig_create_btnCmd(self):
         pm.undoInfo(openChunk = True)
         geo_grp_list = pm.ls(sl = True)
         ssu.init_hierarchy()
-        ssu.init_geo_grp(geo_grp_list = geo_grp_list)
-        # ssu.init_base_mesh_cache()
+        ssu.init_geo_grp(geo_grp_list = self.get_QListWidget_items(self.base_rig_info_list))  
         pm.undoInfo(closeChunk = True)
+
+    ####################################################################################
+    ####################################################################################
+    ####################################################################################
+
+    def reference_create_btnBtn(self):
+        pm.undoInfo(openChunk = True)
+        pm.undoInfo(closeChunk = True)
+
+    ####################################################################################
+    ####################################################################################
+    ####################################################################################
+
 
     def create_nRigid_btnCmd(self):
         pm.undoInfo(openChunk = True)

@@ -224,7 +224,7 @@ class Qt_UI(object):
             QLabel.setWordWrap(True)
         return(QLabel)
 
-    def create_QPushButton(self, ui_name=None, text=None, parent=None, co=None, url=None, cmd=None, c=None, bgc=None):
+    def create_QPushButton(self, ui_name=None, text=None, expanding=None, parent=None, co=None, url=None, cmd=None, c=None, bgc=None):
         QPushButton = QtWidgets.QPushButton()
         if ui_name:
             QPushButton.setObjectName(ui_name)
@@ -239,6 +239,9 @@ class Qt_UI(object):
             text_QLabel.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
             text_QHBoxLayout.setSpacing(0)
             text_QHBoxLayout.setMargin(0)
+
+        if expanding:
+            QPushButton.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 
         if parent:
             self.parent_QtWidgets(parent, QPushButton, co = co)
@@ -386,13 +389,39 @@ class Qt_UI(object):
         if parent:
             self.parent_QtWidgets(parent , lineEdit, co = co)
 
-    def create_QListWidget(self, ui_name=None, ams=None, parent=None, co=None):
+    def create_QListWidget(self, ui_name=None, min_w=None, max_w=None, min_h=None, max_h=None, ams=None, parent=None, co=None):
         # ams = allow multiple selection
         list_widget = QtWidgets.QListWidget()
         if ui_name:
             list_widget.setObjectName(ui_name)
+        if min_w:
+            list_widget.setMinimumWidth(min_w)
+        if max_w:
+            list_widget.setMaximumWidth(max_w)
+        if min_h:
+            list_widget.setMinimumHeight(min_h)
+        if max_h:
+            list_widget.setMaximumHeight(max_h)
         if ams:
             list_widget.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        
         if parent:
             self.parent_QtWidgets(parent, list_widget, co = co)
+        
         return(list_widget)
+
+    def get_QListWidget_items(self, widget):
+        item_list = []
+        for i in range(widget.count()):
+            item_list.append(widget.item(i).text())
+        return(item_list)
+
+    def get_QListWidget_selectedItem(self, widget, raw=None):
+        item_raw_list = self.base_rig_info_list.selectedItems()
+        item_list = []
+        for item in item_raw_list:
+            if raw:
+                item_list.append(item)
+            else:
+                item_list.append(item.text())
+        return(item_list)

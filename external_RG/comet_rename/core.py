@@ -11,6 +11,5 @@ def run():
 	comet_rename_file = open(comet_rename_file_path, 'r')
 	comet_rename_txt = comet_rename_file.read()
 	comet_rename_file.close()
-	print comet_rename_txt
 	pm.mel.eval(comet_rename_txt)
 	pm.mel.eval('cometRename;')
