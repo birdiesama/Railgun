@@ -29,6 +29,7 @@ module_list.append(['global_RG.general.module', 'outliner', 'outliner'])
 module_list.append(['global_RG.general.module', 'playblast', 'playblast'])
 module_list.append(['global_RG.general.module', 'preference', 'preference'])
 module_list.append(['global_RG.general.module', 'soft_cluster', 'soft_cluster'])
+module_list.append(['global_RG.general.module', 'text', 'text'])
 module_list.append(['global_RG.general.module', 'uv', 'uv'])
 module_list.append(['global_RG.general.module', 'xgen', 'xgen'])
 if __project__ in __self_path__:
@@ -74,6 +75,7 @@ class General(
     playblast.Playblast,
     preference.Preference,
     soft_cluster.SoftCluster,
+    text.Text,
     uv.UV,
     # xgen.XGen,
     ):

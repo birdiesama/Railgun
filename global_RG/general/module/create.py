@@ -1,8 +1,8 @@
 ################################################################################
-__Script__          = 'global_RG.general.module.clean_up'
+__Script__          = 'global_RG.general.module.create'
 __Author__          = 'Weerapot Chaoman'
-__Version__         = 2.0
-__Date__            = 20191212
+__Version__         = 2.1
+__Date__            = 20200601
 ################################################################################
 import os, sys
 __self_name__   = os.path.basename(__file__)
@@ -12,10 +12,10 @@ __project__     = 'Railgun'
 import pymel.core as pm
 ################################################################################
 
-class Create(object):
+class CreateMaya(object):
 
     def __init__(self):
-        super(Create, self).__init__()
+        super(CreateMaya, self).__init__()
 
     def create_group(self, name=None, parent=None, rgb=None, color=None, lock=None, lock_hide=None):
         if name: # name
@@ -93,7 +93,6 @@ class Create(object):
         if parent: # parent
             if locator.getParent() != parent:
                 pm.parent(locator, parent)
-
         return(locator)
 
     def create_mdv(self, name=None, mode=None):
@@ -102,7 +101,6 @@ class Create(object):
         mode_dict['multiply'] = 1
         mode_dict['divide'] = 2
         mode_dict['power'] = 3
-
         if name:
             if not pm.objExists(name):
                 mdv = pm.createNode('multiplyDivide', n = name)
@@ -115,7 +113,6 @@ class Create(object):
             if type(mode) == type('str'):
                 mode = mode_dict[mode]
             mdv.op.set(mode)
-
         return(mdv)
 
     def create_pma(self, name=None, mode=None):
@@ -126,7 +123,6 @@ class Create(object):
         mode_dict['subtract'] = 2
         mode_dict['minus'] = 2
         mode_dict['average'] = 3
-
         if name:
             if not pm.objExists(name):
                 pma = pm.createNode('plusMinusAverage', n = name)
@@ -143,7 +139,6 @@ class Create(object):
         return(pma)
 
     def create_clamp(self, name=None, max=None, min=None):
-
         if name:
             if not pm.objExists(name):
                 clamp = pm.createNode('clamp', n = name)
@@ -153,8 +148,22 @@ class Create(object):
             clamp.max.set(max, max, max)
         if min:
             clamp.min.set(min, min, min)
-
         return(clamp)
+
+class CreateOS(object):
+
+    def __init__(self):
+        super(CreateOS, self).__init__()
+
+    def create_dir(self, path):
+        if not os.path.exists(path):
+            os.mkdir(path)
+
+class Create(CreateMaya, CreateOS):
+    def __init__(self):
+        super(Create, self).__init__()
+
+    
   
 
 

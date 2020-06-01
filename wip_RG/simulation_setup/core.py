@@ -821,7 +821,7 @@ class Gui(QtWidgets.QWidget, ui.UI):
         ########## SAVE / LOAD ##########
 
         self.save_load_layout = self.create_QGridLayout(w = self._width, nc = 3, parent = self.main_layout)
-        self.save_btn = self.create_QPushButton(text = 'Save', parent = self.save_load_layout, co = (0, 0))
+        self.save_btn = self.create_QPushButton(text = 'Save', parent = self.save_load_layout, co = (0, 0), c = self.save_btnCmd)
         self.load_btn = self.create_QPushButton(text = 'Load', parent = self.save_load_layout, co = (0, 1))
         self.clear_btn = self.create_QPushButton(text = 'Clear', parent = self.save_load_layout, co = (0, 2))
 
@@ -901,16 +901,13 @@ class Gui(QtWidgets.QWidget, ui.UI):
     def base_rig_info_add_btnCmd(self):
         selection_list = pm.ls(sl = True)
         selection_list.sort()
-
         item_list = self.get_QListWidget_items(self.base_rig_info_list)
         for selection in selection_list:
             if selection.fullPath() not in item_list:
                 self.base_rig_info_list.addItem(selection.fullPath())
-
         self.base_rig_info_list.sortItems()
 
     def base_rig_info_remove_btnCmd(self):
-
         selection_list = self.get_QListWidget_selectedItem(self.base_rig_info_list, raw = True)
         for selection in selection_list:
             (self.base_rig_info_list.takeItem(self.base_rig_info_list.row(selection)))
@@ -991,6 +988,28 @@ class Gui(QtWidgets.QWidget, ui.UI):
     ####################################################################################
     ####################################################################################
     ####################################################################################
+
+    # save load
+
+    def get_data_path(self):
+        workspace = pm.workspace(q = True, fn = True)
+        data_path = workspace + '/data/simulation_setup_data/'
+        gen.create_dir(data_path)
+        return(data_path)
+
+    def base_rig_info_save(self):
+        data_path = self.get_data_path()
+        item_list = self.get_QListWidget_items(self.base_rig_info_list)
+
+    def save_btnCmd(self):
+        self.base_rig_info_save()
+
+
+    ####################################################################################
+    ####################################################################################
+    ####################################################################################
+
+    
 
     def create_nRigid_btnCmd(self):
         pm.undoInfo(openChunk = True)
