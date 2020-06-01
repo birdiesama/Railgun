@@ -388,6 +388,7 @@ class Qt_UI(object):
             lineEdit.setReadOnly(True)
         if parent:
             self.parent_QtWidgets(parent , lineEdit, co = co)
+        return lineEdit
 
     def create_QListWidget(self, ui_name=None, min_w=None, max_w=None, min_h=None, max_h=None, ams=None, parent=None, co=None):
         # ams = allow multiple selection

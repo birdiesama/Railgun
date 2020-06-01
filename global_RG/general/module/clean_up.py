@@ -60,76 +60,7 @@ class CleanUp(object):
         except:
             return None
 
-    ##################
-    ''' lock hide attr '''
-    ##################
-    def lock_hide_attr(self, target, attr_list=None, en=True):
-        
-        channelBox_val = not en
-        keyable_val = not en
-        lock_val = en
-
-        # patch
-        target_list = target
-        if not isinstance(target_list, list):
-            target_list = [target_list]
-        target = None
-        
-        for target in target_list:
-
-            target = pm.PyNode(target)
-
-            if not attr_list:
-                for attr in ['t', 'r', 's']:
-                    for axis in ['x', 'y', 'z']:
-                        if en:
-                            pm.setAttr(target + '.' + attr + axis, keyable = keyable_val)
-                            pm.setAttr(target + '.' + attr + axis, channelBox = channelBox_val)
-                            self.lock_default_attr(target, en = en)
-                        elif not en:
-                            pm.setAttr(target + '.' + attr + axis, channelBox = channelBox_val)
-                            pm.setAttr(target + '.' + attr + axis, keyable = keyable_val)
-                            self.lock_default_attr(target, en = en)
-
-            else:
-                for attr in attr_list:
-                    if attr in ['t', 'r', 's']:
-                        for axis in ['x', 'y', 'z']:
-                            if en:
-                                pm.setAttr(target + '.' + attr + axis, keyable = keyable_val)
-                                pm.setAttr(target + '.' + attr + axis, channelBox = channelBox_val)
-                            elif not en:
-                                pm.setAttr(target + '.' + attr + axis, channelBox = channelBox_val)
-                                pm.setAttr(target + '.' + attr + axis, keyable = keyable_val)
-                    else:
-                        if en:
-                            pm.setAttr(target + '.' + attr, keyable = keyable_val)
-                            pm.setAttr(target + '.' + attr, channelBox = channelBox_val)
-                        elif not en:
-                            pm.setAttr(target + '.' + attr, channelBox = channelBox_val)
-                            pm.setAttr(target + '.' + attr, keyable = keyable_val)
-
-                self.lock_attr(target, attr_list = attr_list, en = en)
-
-    def lock_default_attr(self, target, en=True):
-        if en: lock = 'lock'
-        else: lock = 'unlock'
-        target = pm.PyNode(target)
-        for attr in ['t', 'r', 's']:
-            exec('target.{attr}.{lock}()'.format(attr = attr, lock = lock))
-            for axis in ['x', 'y', 'z']:
-                exec('target.{attr}{axis}.{lock}()'.format(attr = attr, axis = axis, lock = lock))
-
-    def lock_attr(self, target, attr_list=None, en=True):
-        if en: lock = 'lock'
-        else: lock = 'unlock'
-        target = pm.PyNode(target)
-        if attr_list:
-            for attr in attr_list:
-                exec('target.{attr}.{lock}()'.format(attr = attr, lock = lock))
-                if attr in ['t', 'r', 's']:
-                    for axis in ['x', 'y', 'z']:
-                        exec('target.{attr}{axis}.{lock}()'.format(attr = attr, axis = axis, lock = lock))
+    
 
     ##################
     ''' sets '''
@@ -188,39 +119,99 @@ class CleanUp(object):
     ##################
     ''' unlock normal '''
     ##################
-    def unlock_normal(self, target):
-        target = pm.PyNode(target)
-        if target.getShape().nodeType() == 'mesh':
-            self.poly_soft_edge(target, 0)
-            self.poly_soft_edge(target, 1)
 
-    def poly_soft_edge(self, target, ot=0): # ot (Operation Type), 0 = set to face, 1 = softenEdge
-        node = None
-        suffix = None
-        target = pm.PyNode(target)
-        target_shape_list = target.getShapes()
+    def unlock_normal(self, target, prefix=True, suffix=False):
 
-        old_node_list = self.list_connections(target, type = 'polySoftEdge')
-        old_node_list.extend(self.list_connections(target, type = 'polyNormalPerVertex'))
+        if prefix: prefix = 'unlockNorm_'
+        else: prefix = ''
+        if suffix: suffix = '_unlockNorm'
+        else: suffix = ''
 
-        if ot == 0 :
-            pm.polySetToFaceNormal(target)
-            suffix = '_setNormal'
-        elif ot == 1:
-            pm.polySoftEdge(target, a = 180, ch = True)
-            suffix = '_softEdge'
+        target_list = target
+        if not isinstance(target_list, list):
+            target_list = [target_list]
 
-        new_node_list = self.list_connections(target, type = 'polySoftEdge')
-        new_node_list.extend(self.list_connections(target, type = 'polyNormalPerVertex'))
+        for target in target_list:
+            target = pm.PyNode(target)
+            target_shape = self.get_visible_shape(target)
+            old_unlockNorm_list = pm.listHistory(target_shape, type = 'polyNormalPerVertex')
+            pm.polyNormalPerVertex(target, unFreezeNormal = True)
+            new_unlockNorm_list = pm.listHistory(target_shape, type = 'polyNormalPerVertex')
+            for unlockNorm in new_unlockNorm_list:
+                if unlockNorm not in old_unlockNorm_list:
+                    unlockNorm.rename(prefix + target.stripNamespace() + suffix)
 
-        for new_node in new_node_list:
-            if new_node not in old_node_list:
-                node = new_node
-            else:
-                node = old_node_list[0]
+    def poly_soft_edge(self, target, prefix=True, suffix=False):
+        if prefix: prefix = 'softEdge_'
+        else: prefix = ''
+        if suffix: suffix = '_softEdge'
+        else: suffix = ''
 
-        node.rename(target.stripNamespace() + suffix)
-        return node
+        target_list = target
+        if not isinstance(target_list, list):
+            target_list = [target_list]
+
+        for target in target_list:
+            target = pm.PyNode(target)
+            target_shape = self.get_visible_shape(target)
+            old_polySoftEdge_list = pm.listHistory(target_shape, type = 'polySoftEdge')
+            pm.polySoftEdge(target, angle = 180, constructionHistory = True)
+            new_polySoftEdge_list = pm.listHistory(target_shape, type = 'polySoftEdge')
+            for polySoftEdge in new_polySoftEdge_list:
+                if polySoftEdge not in old_polySoftEdge_list:
+                    polySoftEdge.rename(prefix + target.stripNamespace() + suffix)
+
+    # def unlock_normal(self, target, prefix=True, suffix=False):
+    #     target = pm.PyNode(target)
+    #     # if target.getShape().nodeType() == 'mesh':
+    #     #     self.poly_soft_edge(target, 0)
+    #     #     self.poly_soft_edge(target, 1)
+
+    #     old_unlockNorm_list = pm.listHistory(fol_driver_shape, type = 'polyNormalPerVertex')
+    #     pm.polyNormalPerVertex(fol_driver, unFreezeNormal = True)
+    #     new_unlockNorm_list = pm.listHistory(fol_driver_shape, type = 'polyNormalPerVertex')
+    #     for unlockNorm in new_unlockNorm_list:
+    #         if unlockNorm not in old_unlockNorm_list:
+    #             unlockNorm.rename(fol_driver.nodeName() + '_unlockNorm')
+
+    # def poly_soft_edge(self, target, ot=0, prefix=True, suffix=False): # ot (Operation Type), 0 = set to face, 1 = softenEdge
+        
+    #     target = pm.PyNode(target)
+    #     target_shape_list = target.getShapes()
+
+    #     old_node_list = self.list_connections(target, type = 'polySoftEdge')
+    #     old_node_list.extend(self.list_connections(target, type = 'polyNormalPerVertex'))
+
+    #     if ot == 0 :
+    #         pm.polySetToFaceNormal(target)
+    #         if prefix:
+    #             prefix = 'setNormal_'
+    #         if suffix:
+    #             suffix = '_setNormal'
+    #     elif ot == 1:
+    #         pm.polySoftEdge(target, a = 180, ch = True)
+    #         if prefix:
+    #             prefix = 'softEdge_'
+    #         if suffix:
+    #             suffix = '_softEdge'
+
+        # new_node_list = self.list_connections(target, type = 'polySoftEdge')
+        # new_node_list.extend(self.list_connections(target, type = 'polyNormalPerVertex'))
+
+        # for new_node in new_node_list:
+        #     if new_node not in old_node_list:
+        #         node = new_node
+        #     else:
+        #         node = old_node_list[0]
+
+        # name = target.stripNamespace()
+        # if prefix:
+        #     name = prefix + name
+        # if suffix:
+        #     name = name + suffix
+        # node.rename(name)
+        
+        # return node
 
     def rename_tweak(self):
         tweak_list = pm.ls(type = 'tweak')

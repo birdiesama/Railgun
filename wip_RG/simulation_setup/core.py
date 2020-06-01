@@ -68,7 +68,6 @@ class SimulationSetup(general.General):
 
         # INPUT
         self.name_cache_in      = 'input_anim'
-
         self.info_sim_input         = ['sim_input', None]
         self.info_collider_input    = ['collider_input', None]
         self.info_collider_input_wrap = ['collider_input_wrap', None]
@@ -78,7 +77,14 @@ class SimulationSetup(general.General):
 
         # SIM
         self.info_solver    = ['solver', None]
-        self.name_solver_mm_ref = 'solver_mm_ref'
+
+        self.name_cache_in_loc = 'input_anim_loc'
+        self.name_solver_mm_ref = 'solver_mm_loc'
+
+        self.info_ref = ['ref_loc_grp', None]
+        self.name_ref_fol = 'ref_fol'
+        self.name_ref_loc = 'ref_loc'
+
         self.info_collider  = ['collider', None]
         self.info_nRigid    = ['nRigid', None]
         self.info_cloth     = ['cloth', None]
@@ -311,7 +317,7 @@ class SimulationSetup(general.General):
                 self.assign_poly_shader(target_list = mesh, color_name = color)
 
         # create cache_in_rivet -- for default nucleus motion mult
-        cache_in_loc = self.create_locator(name = '{0}_loc'.format(self.name_cache_in))
+        cache_in_loc = self.create_locator(name = self.name_cache_in_loc)
 
         for axis in ['x', 'y', 'z']:
             exec("cache_in_grp.boundingBoxCenter{0} >> cache_in_loc.t{1}".format(axis.upper(), axis))
@@ -739,6 +745,7 @@ class SimulationSetup(general.General):
             pm.reorder(nucleus_list, front = True)
 
 ssu = SimulationSetup()
+gen = general.General()
 
 def maya_main_window():
     main_window_ptr = mui.MQtUtil.mainWindow()
@@ -783,7 +790,7 @@ class Gui(QtWidgets.QWidget, ui.UI):
         self.base_rig_info_remove_btn = self.create_QPushButton(parent = self.base_rig_info_btn_layout, expanding = True, text = 'Remove', c = self.base_rig_info_remove_btnCmd)
         self.base_rig_info_clear_btn = self.create_QPushButton(parent = self.base_rig_info_btn_layout, expanding = True, text = 'Clear', c = self.base_rig_info_clear_btnCmd)
 
-        self.base_rig_create_btn = self.create_QPushButton(text = 'Create Base Rig', parent = self.main_layout, c = self.base_rig_create_btnCmd)
+        self.base_rig_create_btn = self.create_QPushButton(text = 'Create base rig', parent = self.main_layout, c = self.base_rig_create_btnCmd)
 
         self.create_separator(parent = self.main_layout)
 
@@ -805,9 +812,9 @@ class Gui(QtWidgets.QWidget, ui.UI):
         self.reference_edge2_lineEdit = self.create_QLineEdit(read_only = True, parent = self.reference_lineEdit_layout, co = (1, 2))
 
         self.reference_getInfo_btn_layout = self.create_QGridLayout(w = self._width, nc = 2, cwp = (60, 40), parent = self.main_layout)
-        self.reference_getInfo_btn = self.create_QPushButton(parent = self.reference_getInfo_btn_layout, text = 'Get edges', c = '', co = (0, 1))
+        self.reference_getInfo_btn = self.create_QPushButton(parent = self.reference_getInfo_btn_layout, text = 'Get edges', c = self.reference_getInfo_btnCmd, co = (0, 1))
 
-        self.reference_create_btn = self.create_QPushButton(parent = self.main_layout, text = 'Create reference rivet', c = '')
+        self.reference_create_btn = self.create_QPushButton(parent = self.main_layout, text = 'Create reference loc', c = self.reference_create_btnCmd)
 
         self.create_separator(parent = self.main_layout)
 
@@ -922,14 +929,68 @@ class Gui(QtWidgets.QWidget, ui.UI):
     ####################################################################################
     ####################################################################################
 
-    def reference_create_btnBtn(self):
+    def reference_getInfo_btnCmd(self):
         pm.undoInfo(openChunk = True)
+        # get edge
+        raw_edge_list = pm.filterExpand(sm = 32)
+        edge_list = []
+        if raw_edge_list:
+            for edge in raw_edge_list:
+                edge_list.append(edge.split('.')[-1])
+            self.reference_edge1_lineEdit.setText(edge_list[0])
+            self.reference_edge2_lineEdit.setText(edge_list[1])
+        else:
+            pm.error('Please select 2 edges before proceeding')
+        # get object
+        object_shape = pm.ls(sl = True, o = True)[0]
+        object = pm.listRelatives(object_shape, parent = True)[0]
+        self.reference_tfm_lineEdit.setText(object.fullPath())
         pm.undoInfo(closeChunk = True)
 
-    ####################################################################################
-    ####################################################################################
-    ####################################################################################
+    def reference_create_btnCmd(self):
+        pm.undoInfo(openChunk = True)
 
+        # initiate
+        utils_grp = gen.create_group(name = ssu.info_utils[0])
+        # get info from the gui
+        object = self.reference_tfm_lineEdit.text()
+        object = pm.PyNode(object)
+        edge1 = self.reference_edge1_lineEdit.text()
+        edge2 = self.reference_edge2_lineEdit.text()
+        edge1 = pm.PyNode('{0}.{1}'.format(object.fullPath(), edge1))
+        edge2 = pm.PyNode('{0}.{1}'.format(object.fullPath(), edge2))
+        # get ref pos
+        pm.select(edge1, edge2)
+        cluster = pm.cluster()
+        ref_pos = pm.xform(cluster, q = True, ws = True, rp = True)
+        pm.delete(cluster)
+        # create ref_loc        
+        obj_ref = pm.duplicate(object)[0]
+        obj_ref.rename('{0}_ref'.format(object.nodeName()))
+        gen.unlock_normal(target = obj_ref)
+        gen.poly_soft_edge(target = obj_ref)
+        gen.quick_blendshape(object, obj_ref, name = 'BSH_src_{0}'.format(object.stripNamespace()))
+        ref_fol = gen.attach_fol_mesh(ssu.name_ref_fol, obj_ref, ref_pos)
+        ref_loc = gen.create_locator(name = ssu.name_ref_loc)
+        point_con = pm.pointConstraint(ref_fol, ref_loc, mo = False, skip = 'none')
+        pm.delete(point_con)
+        par_con = pm.parentConstraint(ref_fol, ref_loc, mo = True, skipRotate = 'none', skipTranslate = 'none')
+        # organize
+        ref_grp = gen.create_group(ssu.info_ref[0])
+        ref_grp.v.set(0)
+        pm.parent(ref_loc, ref_grp, utils_grp)
+        pm.parent(obj_ref, ref_fol, ref_grp)
+        gen.lock_hide_attr(target = ref_grp)
+        gen.lock_hide_attr(target = ref_loc, attr_list = ['s'])
+        # connect ref >> motion mult
+        solver_mm_ref = gen.create_locator(name = ssu.name_solver_mm_ref)
+        ref_loc.t >> solver_mm_ref.t
+        ref_loc.r >> solver_mm_ref.r
+        pm.undoInfo(closeChunk = True)        
+
+    ####################################################################################
+    ####################################################################################
+    ####################################################################################
 
     def create_nRigid_btnCmd(self):
         pm.undoInfo(openChunk = True)
@@ -954,8 +1015,6 @@ class Gui(QtWidgets.QWidget, ui.UI):
         pm.undoInfo(openChunk = True)
         # ssu.ssu_create_nHair()
         pm.undoInfo(closeChunk = True)
-
-
 
     def set_nucleus_btnCmd(self):
         pm.undoInfo(openChunk = True)
