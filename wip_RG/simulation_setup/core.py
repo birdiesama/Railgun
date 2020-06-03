@@ -821,11 +821,15 @@ class Gui(QtWidgets.QWidget, ui.UI):
         ########## SAVE / LOAD ##########
 
         self.save_load_layout = self.create_QGridLayout(w = self._width, nc = 3, parent = self.main_layout)
-        self.save_btn = self.create_QPushButton(text = 'Save', parent = self.save_load_layout, co = (0, 0), c = self.save_btnCmd)
+        self.save_btn = self.create_QPushButton(text = 'Save', parent = self.save_load_layout, co = (0, 0), c = self.save_cmd)
         self.load_btn = self.create_QPushButton(text = 'Load', parent = self.save_load_layout, co = (0, 1))
         self.clear_btn = self.create_QPushButton(text = 'Clear', parent = self.save_load_layout, co = (0, 2))
 
         self.main_layout.setAlignment(QtCore.Qt.AlignTop)
+
+        ########## LOAD ##########
+
+        self.load_cmd()
 
         # self.create_separator(parent = self.main_layout)
 
@@ -919,8 +923,29 @@ class Gui(QtWidgets.QWidget, ui.UI):
         pm.undoInfo(openChunk = True)
         geo_grp_list = pm.ls(sl = True)
         ssu.init_hierarchy()
-        ssu.init_geo_grp(geo_grp_list = self.get_QListWidget_items(self.base_rig_info_list))  
+        ssu.init_geo_grp(geo_grp_list = self.get_QListWidget_items(self.base_rig_info_list))
+        self.save_cmd()
         pm.undoInfo(closeChunk = True)
+
+    def base_rig_data_save(self):
+        data_path = self.get_data_path()
+        item_list = self.get_QListWidget_items(self.base_rig_info_list)
+        base_rig_data_path = '{0}010__data__base_rig.txt'.format(data_path)
+        base_rig_data_file = open(base_rig_data_path, 'w+')
+        base_rig_data_file.write(str(item_list))
+        base_rig_data_file.close()
+
+    def base_rig_data_load(self):
+        data_path = self.get_data_path()
+        base_rig_data_path = '{0}010__data__base_rig.txt'.format(data_path)
+        if os.path.exists(base_rig_data_path):
+            base_rig_data_file = open(base_rig_data_path, 'r')
+            base_rig_data_txt = base_rig_data_file.read()
+            base_rig_data_file.close()            
+            item_list = eval(base_rig_data_txt)
+            self.base_rig_info_list.clear()
+            for item in item_list:
+                self.base_rig_info_list.addItem(item)
 
     ####################################################################################
     ####################################################################################
@@ -939,9 +964,9 @@ class Gui(QtWidgets.QWidget, ui.UI):
         else:
             pm.error('Please select 2 edges before proceeding')
         # get object
-        object_shape = pm.ls(sl = True, o = True)[0]
-        object = pm.listRelatives(object_shape, parent = True)[0]
-        self.reference_tfm_lineEdit.setText(object.fullPath())
+        obj_shape = pm.ls(sl = True, o = True)[0]
+        obj = pm.listRelatives(obj_shape, parent = True)[0]
+        self.reference_tfm_lineEdit.setText(obj.fullPath())
         pm.undoInfo(closeChunk = True)
 
     def reference_create_btnCmd(self):
@@ -950,12 +975,12 @@ class Gui(QtWidgets.QWidget, ui.UI):
         # initiate
         utils_grp = gen.create_group(name = ssu.info_utils[0])
         # get info from the gui
-        object = self.reference_tfm_lineEdit.text()
-        object = pm.PyNode(object)
+        obj = self.reference_tfm_lineEdit.text()
+        obj = pm.PyNode(obj)
         edge1 = self.reference_edge1_lineEdit.text()
         edge2 = self.reference_edge2_lineEdit.text()
-        edge1 = pm.PyNode('{0}.{1}'.format(object.fullPath(), edge1))
-        edge2 = pm.PyNode('{0}.{1}'.format(object.fullPath(), edge2))
+        edge1 = pm.PyNode('{0}.{1}'.format(obj.fullPath(), edge1))
+        edge2 = pm.PyNode('{0}.{1}'.format(obj.fullPath(), edge2))
         # get ref pos
         pm.select(edge1, edge2)
         cluster = pm.cluster()
@@ -963,10 +988,10 @@ class Gui(QtWidgets.QWidget, ui.UI):
         pm.delete(cluster)
         # create ref_loc        
         obj_ref = pm.duplicate(object)[0]
-        obj_ref.rename('{0}_ref'.format(object.nodeName()))
+        obj_ref.rename('{0}_ref'.format(obj.nodeName()))
         gen.unlock_normal(target = obj_ref)
         gen.poly_soft_edge(target = obj_ref)
-        gen.quick_blendshape(object, obj_ref, name = 'BSH_src_{0}'.format(object.stripNamespace()))
+        gen.quick_blendshape(object, obj_ref, name = 'BSH_src_{0}'.format(obj.stripNamespace()))
         ref_fol = gen.attach_fol_mesh(ssu.name_ref_fol, obj_ref, ref_pos)
         ref_loc = gen.create_locator(name = ssu.name_ref_loc)
         point_con = pm.pointConstraint(ref_fol, ref_loc, mo = False, skip = 'none')
@@ -983,7 +1008,46 @@ class Gui(QtWidgets.QWidget, ui.UI):
         solver_mm_ref = gen.create_locator(name = ssu.name_solver_mm_ref)
         ref_loc.t >> solver_mm_ref.t
         ref_loc.r >> solver_mm_ref.r
+        self.reference_data_save()
         pm.undoInfo(closeChunk = True)        
+
+    def reference_data_save(self):
+
+        data_path = self.get_data_path()
+
+        obj = self.reference_tfm_lineEdit.text()
+        edge1 = self.reference_edge1_lineEdit.text()
+        edge2 = self.reference_edge2_lineEdit.text()
+
+        data_dict = {}
+        data_dict['obj'] = obj
+        data_dict['edge1'] = edge1
+        data_dict['edge2'] = edge2
+
+        reference_data_path = '{0}020__data__reference.txt'.format(data_path)
+        reference_data_file = open(reference_data_path, 'w+')
+        reference_data_file.write(str(data_dict))
+        reference_data_file.close()
+
+    def reference_data_load(self):
+
+        data_path = self.get_data_path()
+        reference_data_path = '{0}020__data__reference.txt'.format(data_path)
+        
+        if os.path.exists(reference_data_path):
+            reference_data_file = open(reference_data_path, 'r')
+            reference_data_txt = reference_data_file.read()
+            reference_data_file.close()
+            data_dict = eval(reference_data_txt)
+            print data_dict
+
+            obj = data_dict['obj'] 
+            edge1 = data_dict['edge1']
+            edge2 = data_dict['edge2']
+
+            self.reference_tfm_lineEdit.setText(obj)
+            self.reference_edge1_lineEdit.setText(edge1)
+            self.reference_edge2_lineEdit.setText(edge2)
 
     ####################################################################################
     ####################################################################################
@@ -997,12 +1061,13 @@ class Gui(QtWidgets.QWidget, ui.UI):
         gen.create_dir(data_path)
         return(data_path)
 
-    def base_rig_info_save(self):
-        data_path = self.get_data_path()
-        item_list = self.get_QListWidget_items(self.base_rig_info_list)
+    def save_cmd(self):
+        self.base_rig_data_save()
+        self.reference_data_save()
 
-    def save_btnCmd(self):
-        self.base_rig_info_save()
+    def load_cmd(self):
+        self.base_rig_data_load()
+        self.reference_data_load()
 
 
     ####################################################################################
