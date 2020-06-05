@@ -200,7 +200,7 @@ class SimulationSetup(general.General):
         # __visibility__
         top_node.addAttr('__visibility__', keyable = True, attributeType = 'enum', enumName = '======:')
         top_node.__visibility__.lock()
-        top_node.addAttr(self.info_input_attr[0], keyable = True, attributeType = 'bool', dv = 0)
+        top_node.addAttr(self.info_input_attr[0], keyable = True, attributeType = 'bool', dv = 1)
         top_node.addAttr(self.info_sim_attr[0], keyable = True, attributeType = 'bool', dv = 1)
         top_node.addAttr(self.info_output_attr[0], keyable = True, attributeType = 'bool', dv = 0)
 
@@ -818,6 +818,12 @@ class Gui(QtWidgets.QWidget, ui.UI):
 
         self.create_separator(parent = self.main_layout)
 
+        ########## Global Run ##########
+
+        self.global_run_btn = self.create_QPushButton(parent = self.main_layout, text = 'Global Run', c = self.global_run_btnCmd)
+
+        self.create_separator(parent = self.main_layout)
+
         ########## SAVE / LOAD ##########
 
         self.save_load_layout = self.create_QGridLayout(w = self._width, nc = 3, parent = self.main_layout)
@@ -931,18 +937,14 @@ class Gui(QtWidgets.QWidget, ui.UI):
         data_path = self.get_data_path()
         item_list = self.get_QListWidget_items(self.base_rig_info_list)
         base_rig_data_path = '{0}010__data__base_rig.txt'.format(data_path)
-        base_rig_data_file = open(base_rig_data_path, 'w+')
-        base_rig_data_file.write(str(item_list))
-        base_rig_data_file.close()
+        gen.text_write(path = base_rig_data_path, string = item_list)
 
     def base_rig_data_load(self):
         data_path = self.get_data_path()
         base_rig_data_path = '{0}010__data__base_rig.txt'.format(data_path)
-        if os.path.exists(base_rig_data_path):
-            base_rig_data_file = open(base_rig_data_path, 'r')
-            base_rig_data_txt = base_rig_data_file.read()
-            base_rig_data_file.close()            
-            item_list = eval(base_rig_data_txt)
+        txt_txt = gen.text_read(path = base_rig_data_path)
+        if txt_txt:
+            item_list = eval(txt_txt)
             self.base_rig_info_list.clear()
             for item in item_list:
                 self.base_rig_info_list.addItem(item)
@@ -987,11 +989,11 @@ class Gui(QtWidgets.QWidget, ui.UI):
         ref_pos = pm.xform(cluster, q = True, ws = True, rp = True)
         pm.delete(cluster)
         # create ref_loc        
-        obj_ref = pm.duplicate(object)[0]
+        obj_ref = pm.duplicate(obj)[0]
         obj_ref.rename('{0}_ref'.format(obj.nodeName()))
         gen.unlock_normal(target = obj_ref)
         gen.poly_soft_edge(target = obj_ref)
-        gen.quick_blendshape(object, obj_ref, name = 'BSH_src_{0}'.format(obj.stripNamespace()))
+        gen.quick_blendshape(obj, obj_ref, name = 'BSH_src_{0}'.format(obj.stripNamespace()))
         ref_fol = gen.attach_fol_mesh(ssu.name_ref_fol, obj_ref, ref_pos)
         ref_loc = gen.create_locator(name = ssu.name_ref_loc)
         point_con = pm.pointConstraint(ref_fol, ref_loc, mo = False, skip = 'none')
@@ -1012,42 +1014,39 @@ class Gui(QtWidgets.QWidget, ui.UI):
         pm.undoInfo(closeChunk = True)        
 
     def reference_data_save(self):
-
         data_path = self.get_data_path()
-
         obj = self.reference_tfm_lineEdit.text()
         edge1 = self.reference_edge1_lineEdit.text()
         edge2 = self.reference_edge2_lineEdit.text()
-
         data_dict = {}
         data_dict['obj'] = obj
         data_dict['edge1'] = edge1
         data_dict['edge2'] = edge2
-
         reference_data_path = '{0}020__data__reference.txt'.format(data_path)
-        reference_data_file = open(reference_data_path, 'w+')
-        reference_data_file.write(str(data_dict))
-        reference_data_file.close()
+        gen.text_write(path = reference_data_path, string = data_dict)
 
     def reference_data_load(self):
-
         data_path = self.get_data_path()
-        reference_data_path = '{0}020__data__reference.txt'.format(data_path)
-        
-        if os.path.exists(reference_data_path):
-            reference_data_file = open(reference_data_path, 'r')
-            reference_data_txt = reference_data_file.read()
-            reference_data_file.close()
-            data_dict = eval(reference_data_txt)
-            print data_dict
-
+        reference_data_path = '{0}020__data__reference.txt'.format(data_path)        
+        txt_txt = gen.text_read(path = reference_data_path)
+        if txt_txt:
+            data_dict = eval(txt_txt)
             obj = data_dict['obj'] 
             edge1 = data_dict['edge1']
             edge2 = data_dict['edge2']
-
             self.reference_tfm_lineEdit.setText(obj)
             self.reference_edge1_lineEdit.setText(edge1)
-            self.reference_edge2_lineEdit.setText(edge2)
+            self.reference_edge2_lineEdit.setText(edge2)            
+
+    ####################################################################################
+    ####################################################################################
+    ####################################################################################
+
+    def global_run_btnCmd(self):
+        pm.undoInfo(openChunk = True)
+        self.base_rig_create_btnCmd()
+        self.reference_create_btnCmd()
+        pm.undoInfo(closeChunk = True)
 
     ####################################################################################
     ####################################################################################
@@ -1069,12 +1068,9 @@ class Gui(QtWidgets.QWidget, ui.UI):
         self.base_rig_data_load()
         self.reference_data_load()
 
-
     ####################################################################################
     ####################################################################################
     ####################################################################################
-
-    
 
     def create_nRigid_btnCmd(self):
         pm.undoInfo(openChunk = True)

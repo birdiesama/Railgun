@@ -15,5 +15,19 @@ class Text(object):
 	def __init__(self):
 		super(Text, self).__init__()
 
-	
+	def text_write(self, path, string=None, mode='w+'):
+		txt_file = open(path, mode)
+		if string:
+			if not isinstance(string, str):
+				string = str(string)
+			txt_file.write(string)
+		txt_file.close()
 
+	def text_read(self, path, mode='r'):
+		if os.path.exists(path):
+			txt_file = open(path, mode)
+			txt_txt = txt_file.read()
+			txt_file.close()
+			return(txt_txt)
+		else:
+			return(None)

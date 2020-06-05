@@ -1,0 +1,22 @@
+import pymel.core as pm
+
+start_frame = pm.playbackOptions(min = True)
+end_frame = pm.playbackOptions(max = True)
+
+selection_list = pm.ls(sl = True)
+
+driver = selection_list[0]
+driven = selection_list[1]
+
+pm.currentTime(start_frame)
+pos1 = pm.xform(driver, q = True, ws = True, rp = True)
+pm.currentTime(end_frame)
+pos2 = pm.xform(driver, q = True, ws = True, rp = True)
+
+tx_val = pos2[0]-pos1[0]
+ty_val = pos2[1]-pos1[1]
+tz_val = pos2[2]-pos1[2]
+
+print tx_val
+print ty_val
+print tz_val
