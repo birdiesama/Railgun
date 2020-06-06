@@ -10,6 +10,8 @@ __self_path__   = ((os.path.realpath(__file__)).replace(__self_name__, '')).repl
 __project__     = 'Railgun'
 ################################################################################
 import pymel.core as pm
+from random import shuffle
+import re
 ################################################################################
 
 class CleanUp(object):
@@ -59,8 +61,6 @@ class CleanUp(object):
             return mesh_shape
         except:
             return None
-
-    
 
     ##################
     ''' sets '''
@@ -122,10 +122,15 @@ class CleanUp(object):
 
     def unlock_normal(self, target, prefix=True, suffix=False):
 
-        if prefix: prefix = 'unlockNorm_'
-        else: prefix = ''
-        if suffix: suffix = '_unlockNorm'
-        else: suffix = ''
+        if suffix:
+            prefix = False
+
+        if prefix:
+            prefix = 'unlockNorm_'
+            suffix = ''
+        elif suffix:
+            prefix = ''
+            suffix = '_unlockNorm'
 
         target_list = target
         if not isinstance(target_list, list):
@@ -142,10 +147,16 @@ class CleanUp(object):
                     unlockNorm.rename(prefix + target.stripNamespace() + suffix)
 
     def poly_soft_edge(self, target, prefix=True, suffix=False):
-        if prefix: prefix = 'softEdge_'
-        else: prefix = ''
-        if suffix: suffix = '_softEdge'
-        else: suffix = ''
+
+        if suffix:
+            prefix = False
+
+        if prefix:
+            prefix = 'unlockNorm_'
+            suffix = ''
+        elif suffix:
+            prefix = ''
+            suffix = '_unlockNorm'
 
         target_list = target
         if not isinstance(target_list, list):
@@ -240,6 +251,7 @@ class CleanUp(object):
     ##################
     ''' clean duplicate '''
     ##################
+
     def clean_duplicate(self, target, suffix='dup'):
         target = pm.PyNode(target)
         dup_target = pm.duplicate(target)[0]
@@ -256,5 +268,78 @@ class CleanUp(object):
             if target.getShape().nodeType() == 'mesh':
                 pm.sets('initialShadingGroup', forceElement=dup_target)
         return(dup_target)
+
+    def quick_duplicate(self, target, namespace=None, suffix=None, parent=None, lockHide=False, color_list=None, re_list=None):
+        target = pm.PyNode(target)
+        dup_target = pm.duplicate(target)[0]
+        # rename top node
+        if namespace:
+            dup_target.rename('{0}:{1}'.format(namespace, target.nodeName()))
+            if suffix:
+                dup_target.rename('{0}_{1}'.format(dup_target.nodeName(), suffix))
+        elif suffix:
+            dup_target.rename('{0}_{1}'.format(target.nodeName(), suffix))
+        # rename tfm under top node (if any)
+        tfm_list = dup_target.listRelatives(ad = True, type = 'transform')
+        if tfm_list:
+            tfm_list = list(set(tfm_list))            
+            for tfm in tfm_list:
+                if namespace:
+                    tfm.rename('{0}:{1}'.format(namespace, tfm.nodeName()))
+                    if suffix:
+                        tfm.rename('{0}_{1}'.format(tfm.nodeName(), suffix))
+                elif suffix:
+                    tfm.rename('{0}_{1}'.format(tfm.nodeName(), suffix))
+        # parent
+        if parent:
+            pm.parent(dup_target, parent)
+        # lockHide
+        if lockHide:
+            self.lock_hide_attr(dup_target)
+        # color
+        if color_list:
+
+            shuffle(color_list)
+            mesh_shape_list = pm.listRelatives(dup_target, ad = True, type = 'mesh')
+            mesh_list = pm.listRelatives(mesh_shape_list, parent = True)
+            mesh_list = list(set(mesh_list))
+
+            for i in range(0, len(mesh_list)):
+                mesh = mesh_list[i]
+                color = color_list[i%len(color_list)]
+                
+                if re_list:
+                    for re_data in re_list:
+                        re = re_data[0]
+                        re_color = re_data[1]
+                        re_exception = re_data[2]
+                        if re.findall(mesh.nodeName()):
+                            if re_exception:
+                                if not re_exception.findall(mesh.nodeName()):
+                                    color = re_color
+                            else:
+                                color = re_color
+
+                # if self.body_regex.findall(str(mesh)):
+                #     if geo_grp != input_anim:
+                #         color = self.skin_color
+                #     else:
+                #         pass
+                # elif self.eye_regex.findall(mesh.nodeName()):
+                #     if not self.eye_exception_regex.findall(mesh.nodeName()):
+                #         color = self.eye_color
+                
+
+                self.assign_poly_shader(target_list = mesh, color_name = color)
+
+        # return top node
+        return(dup_target)
+
+
+
+
+
+
+
 
     # def copy_mesh_shape(self, driver, driven):

@@ -67,7 +67,7 @@ class SimulationSetup(general.General):
         self.namespace_output = 'output'
 
         # INPUT
-        self.name_cache_in      = 'input_anim'
+        self.info_input_anim        = ['input_anim', None]
         self.info_sim_input         = ['sim_input', None]
         self.info_collider_input    = ['collider_input', None]
         self.info_collider_input_wrap = ['collider_input_wrap', None]
@@ -76,9 +76,16 @@ class SimulationSetup(general.General):
         self.info_nHair_input       = ['nHair_input', None]
 
         # SIM
-        self.info_solver    = ['solver', None]
 
-        self.name_cache_in_loc = 'input_anim_loc'
+        self.info_input_sim     = ['input_sim', 'blue']
+        self.suffix_input_sim   = 'iSim'
+
+        self.info_input_tPose   = ['input_tPose', None]
+        self.suffix_input_tPose = 'iTPose' 
+
+        self.info_solver = ['solver', None]
+
+        self.name_input_anim_loc = 'input_anim_loc'
         self.name_solver_mm_ref = 'solver_mm_loc'
 
         self.info_ref = ['ref_loc_grp', None]
@@ -122,7 +129,7 @@ class SimulationSetup(general.General):
 
         # Color
         self.color_list = ['light_sea_green', 'light_green', 'light_yellow', 'light_orange', 'light_red', 'light_brown', 'light_purple', 'light_pink']
-        self.mono_color_list = ['black', 'dark_grey', 'grey', 'light_grey']
+        self.color_mono_list = ['black', 'dark_grey', 'grey', 'light_grey']
 
     def init_hierarchy(self):
 
@@ -254,7 +261,9 @@ class SimulationSetup(general.General):
     def init_geo_grp(self, geo_grp_list=None):
 
         # initiate groups
+        top_node = self.create_group(name = self.info_topNode[0])
         input = self.create_group(name = self.info_input[0])
+        sim = self.create_group(name = self.info_sim[0])
         publish = self.create_group(name = self.info_publish[0])
         utils_grp = self.create_group(name = self.info_utils[0])
         solver_grp = self.create_group(name = self.info_solver[0])
@@ -272,60 +281,80 @@ class SimulationSetup(general.General):
         # create publish_set
         publish_set = self.create_set(name = self.name_publish_set)
 
-        cache_in_grp = self.create_group(name = self.name_cache_in, parent = input)
-        self.lock_hide_attr(cache_in_grp)
+        input_anim = self.create_group(name = self.info_input_anim[0], parent = input)
+        self.lock_hide_attr(input_anim)
 
+        input_tPose = self.create_group(name = self.info_input_tPose[0], parent = input)
+        input_tPose.v.set(0)
+        #self.lock_hide_attr(input_tPose)
+        
+        input_sim = self.create_group(name = self.info_input_sim[0], parent = input, color = self.info_input_sim[1])
+        input_sim.v.set(0)
+        self.lock_hide_attr(input_sim)
+        
         # duplicate selected geo group, for input and output
         for geo_grp in geo_grp_list:
 
             geo_grp = pm.PyNode(geo_grp)
             geo_grp_name = geo_grp.nodeName()
             
-            input_geo_grp = pm.duplicate(geo_grp)[0]
-            output_geo_grp = pm.duplicate(geo_grp)[0]
+            input_geo_grp = self.quick_duplicate(geo_grp, namespace = namespace_input, parent = input_anim, lockHide = True,
+                color_list = self.color_mono_list, re_list = [[self.eye_regex, self.eye_color, self.eye_exception_regex]])
+            output_geo_grp = self.quick_duplicate(geo_grp, namespace = namespace_output, parent = publish, lockHide = True,
+                color_list = self.color_list, re_list = [[self.body_regex, self.skin_color, None], [self.eye_regex, self.eye_color, self.eye_exception_regex]])
 
-            for dup_geo_grp, namespace in zip([input_geo_grp, output_geo_grp], [namespace_input, namespace_output]):
-                dup_geo_grp.rename('{0}:{1}'.format(namespace, geo_grp_name))
-                tfm_list = dup_geo_grp.listRelatives(ad = True, type = 'transform')
-                tfm_list = list(set(tfm_list))        
-                for tfm in tfm_list:
-                    tfm.rename('{0}:{1}'.format(namespace, tfm.nodeName()))
+            input_tPose_geo_grp = self.quick_duplicate(geo_grp, suffix = self.suffix_input_tPose, parent = input_tPose, lockHide = True)
+            input_sim_geo_grp = self.quick_duplicate(geo_grp, suffix = self.suffix_input_sim, parent = input_sim, lockHide = True)
+            self.quick_blendshape(input_geo_grp, input_sim_geo_grp, prefix = True)
+            tPose_bsn = self.quick_blendshape(input_tPose_geo_grp, input_sim_geo_grp)
+            top_node.tPose_val >> tPose_bsn.en
 
-            pm.parent(input_geo_grp, cache_in_grp)
-            pm.parent(output_geo_grp, publish)
-            self.lock_hide_attr([input_geo_grp, output_geo_grp])
+        # # create cache_in_rivet -- for default nucleus motion mult
+        # cache_in_loc = self.create_locator(name = self.name_input_anim_loc)
 
-        # coloring geo_grp
-        for geo_grp, color_list in zip([cache_in_grp, publish], [self.mono_color_list, self.color_list]):
+        # for axis in ['x', 'y', 'z']:
+        #     exec("input_anim.boundingBoxCenter{0} >> cache_in_loc.t{1}".format(axis.upper(), axis))
+        # pm.parent(cache_in_loc, utils_grp)
 
-            shuffle(color_list)
-            mesh_shape_list = pm.listRelatives(geo_grp, ad = True, type = 'mesh')
-            mesh_list = pm.listRelatives(mesh_shape_list, parent = True)
-            mesh_list = list(set(mesh_list))
+        pm.select(clear = True)
 
-            for i in range(0, len(mesh_list)):
-                mesh = mesh_list[i]
-                color = color_list[i%len(color_list)]
-                if self.body_regex.findall(str(mesh)):
-                    if geo_grp != cache_in_grp:
-                        color = self.skin_color
-                    else:
-                        pass
-                elif self.eye_regex.findall(mesh.nodeName()):
-                    if not self.eye_exception_regex.findall(mesh.nodeName()):
-                        color = self.eye_color
-                self.assign_poly_shader(target_list = mesh, color_name = color)
-
-        # create cache_in_rivet -- for default nucleus motion mult
-        cache_in_loc = self.create_locator(name = self.name_cache_in_loc)
-
-        for axis in ['x', 'y', 'z']:
-            exec("cache_in_grp.boundingBoxCenter{0} >> cache_in_loc.t{1}".format(axis.upper(), axis))
-        pm.parent(cache_in_loc, utils_grp)
-
-        # create blend color and attributes
-        # addAttr('from_collider_deformer', keyable = True, attributeType = 'float', max = 1, min = 0, dv = 1)
-
+    def init_reference_loc(self, obj, edge1, edge2):
+        # initiate vars
+        utils_grp = self.create_group(name = self.info_utils[0])
+        input_tPose = self.create_group(name = self.info_input_tPose[0])
+        obj = pm.PyNode(obj)
+        edge1 = pm.PyNode('{0}.{1}'.format(obj.fullPath(), edge1))
+        edge2 = pm.PyNode('{0}.{1}'.format(obj.fullPath(), edge2))
+        # get ref pos
+        pm.select(edge1, edge2)
+        cluster = pm.cluster()
+        ref_pos = pm.xform(cluster, q = True, ws = True, rp = True)
+        pm.delete(cluster)
+        # create ref_loc        
+        obj_ref = pm.duplicate(obj)[0]
+        obj_ref.rename('{0}_ref'.format(obj.nodeName()))
+        self.unlock_normal(target = obj_ref)
+        self.poly_soft_edge(target = obj_ref)
+        self.quick_blendshape(obj, obj_ref, prefix = True)
+        ref_fol = self.attach_fol_mesh(self.name_ref_fol, obj_ref, ref_pos)
+        ref_loc = self.create_locator(name = self.name_ref_loc)
+        point_con = pm.pointConstraint(ref_fol, ref_loc, mo = False, skip = 'none')
+        pm.delete(point_con)
+        par_con = pm.parentConstraint(ref_fol, ref_loc, mo = True, skipRotate = 'none', skipTranslate = 'none')
+        # organize
+        ref_grp = self.create_group(self.info_ref[0])
+        ref_grp.v.set(0)
+        pm.parent(ref_loc, ref_grp, utils_grp)
+        pm.parent(obj_ref, ref_fol, ref_grp)
+        self.lock_hide_attr(target = ref_grp)
+        self.lock_hide_attr(target = ref_loc, attr_list = ['s'])
+        # connect ref >> motion mult
+        solver_mm_ref = self.create_locator(name = self.name_solver_mm_ref)
+        ref_loc.t >> solver_mm_ref.t
+        ref_loc.r >> solver_mm_ref.r
+        # connect ref >> tPose      
+        self.quick_par_con(ref_loc, input_tPose, mo = True)
+        pm.select(clear = True)
 
     def ssu_create_nRigid(self):
         # temporary done, but need to select something from hierarchy or else it will not work
@@ -796,7 +825,7 @@ class Gui(QtWidgets.QWidget, ui.UI):
 
         ########## REFERENCE ##########
 
-        text = 'Select 2 edges on the geometry from cfx|INPUT|input_anim that you want motion_mult, t_pose to reference to'
+        text = 'In cfx|INPUT|input_anim, select 2 edges on the geometry that you want motion_mult/t_pose to reference to.'
         self.reference_label = self.create_QLabel(text = text, parent = self.main_layout, alignment = QtCore.Qt.AlignLeft, word_wrap = True)
 
         self.create_QLabel(text = ' ', parent = self.main_layout, alignment = QtCore.Qt.AlignLeft, word_wrap = True)
@@ -815,6 +844,23 @@ class Gui(QtWidgets.QWidget, ui.UI):
         self.reference_getInfo_btn = self.create_QPushButton(parent = self.reference_getInfo_btn_layout, text = 'Get edges', c = self.reference_getInfo_btnCmd, co = (0, 1))
 
         self.reference_create_btn = self.create_QPushButton(parent = self.main_layout, text = 'Create reference loc', c = self.reference_create_btnCmd)
+
+        self.create_separator(parent = self.main_layout)
+
+        ########## COLLIDER ##########
+
+        text = 'In cfx|INPUT|input_anim, select geometry(s) you want to make collider out of'
+        self.collider_label = self.create_QLabel(text = text, parent = self.main_layout, alignment = QtCore.Qt.AlignLeft, word_wrap = True)
+        
+        # self.base_rig_info_layout = self.create_QGridLayout(w = self._width, nc = 2, cwp = (80, 20), parent = self.main_layout)
+        # self.base_rig_info_list = self.create_QListWidget(parent = self.base_rig_info_layout, min_h = 10, ams = True, co = (0, 0))
+
+        # self.base_rig_info_btn_layout = self.create_QVBoxLayout(parent = self.base_rig_info_layout, co = (0, 1))
+        # self.base_rig_info_add_btn = self.create_QPushButton(parent = self.base_rig_info_btn_layout, expanding = True, text = 'Add', c = self.base_rig_info_add_btnCmd)
+        # self.base_rig_info_remove_btn = self.create_QPushButton(parent = self.base_rig_info_btn_layout, expanding = True, text = 'Remove', c = self.base_rig_info_remove_btnCmd)
+        # self.base_rig_info_clear_btn = self.create_QPushButton(parent = self.base_rig_info_btn_layout, expanding = True, text = 'Clear', c = self.base_rig_info_clear_btnCmd)
+
+        # self.base_rig_create_btn = self.create_QPushButton(text = 'Create base rig', parent = self.main_layout, c = self.base_rig_create_btnCmd)
 
         self.create_separator(parent = self.main_layout)
 
@@ -900,13 +946,9 @@ class Gui(QtWidgets.QWidget, ui.UI):
 
         # nConstraint
 
-        
-
     ####################################################################################
+    ########## BASE RIG ##########
     ####################################################################################
-    ####################################################################################
-
-    ########## BASE RIG FUNCTION ##########
 
     def base_rig_info_add_btnCmd(self):
         selection_list = pm.ls(sl = True)
@@ -973,43 +1015,13 @@ class Gui(QtWidgets.QWidget, ui.UI):
 
     def reference_create_btnCmd(self):
         pm.undoInfo(openChunk = True)
-
         # initiate
         utils_grp = gen.create_group(name = ssu.info_utils[0])
         # get info from the gui
         obj = self.reference_tfm_lineEdit.text()
-        obj = pm.PyNode(obj)
         edge1 = self.reference_edge1_lineEdit.text()
         edge2 = self.reference_edge2_lineEdit.text()
-        edge1 = pm.PyNode('{0}.{1}'.format(obj.fullPath(), edge1))
-        edge2 = pm.PyNode('{0}.{1}'.format(obj.fullPath(), edge2))
-        # get ref pos
-        pm.select(edge1, edge2)
-        cluster = pm.cluster()
-        ref_pos = pm.xform(cluster, q = True, ws = True, rp = True)
-        pm.delete(cluster)
-        # create ref_loc        
-        obj_ref = pm.duplicate(obj)[0]
-        obj_ref.rename('{0}_ref'.format(obj.nodeName()))
-        gen.unlock_normal(target = obj_ref)
-        gen.poly_soft_edge(target = obj_ref)
-        gen.quick_blendshape(obj, obj_ref, name = 'BSH_src_{0}'.format(obj.stripNamespace()))
-        ref_fol = gen.attach_fol_mesh(ssu.name_ref_fol, obj_ref, ref_pos)
-        ref_loc = gen.create_locator(name = ssu.name_ref_loc)
-        point_con = pm.pointConstraint(ref_fol, ref_loc, mo = False, skip = 'none')
-        pm.delete(point_con)
-        par_con = pm.parentConstraint(ref_fol, ref_loc, mo = True, skipRotate = 'none', skipTranslate = 'none')
-        # organize
-        ref_grp = gen.create_group(ssu.info_ref[0])
-        ref_grp.v.set(0)
-        pm.parent(ref_loc, ref_grp, utils_grp)
-        pm.parent(obj_ref, ref_fol, ref_grp)
-        gen.lock_hide_attr(target = ref_grp)
-        gen.lock_hide_attr(target = ref_loc, attr_list = ['s'])
-        # connect ref >> motion mult
-        solver_mm_ref = gen.create_locator(name = ssu.name_solver_mm_ref)
-        ref_loc.t >> solver_mm_ref.t
-        ref_loc.r >> solver_mm_ref.r
+        ssu.init_reference_loc(obj = obj, edge1 = edge1, edge2 = edge2)
         self.reference_data_save()
         pm.undoInfo(closeChunk = True)        
 
