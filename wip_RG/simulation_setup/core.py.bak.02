@@ -772,7 +772,7 @@ class Gui(QtWidgets.QWidget, ui.UI):
         super(Gui, self).__init__(parent, *args, **kwargs)
 
         self._ui            = 'ui_simulation_set_up_util'
-        self._width         = 400.00
+        self._width         = 600.00
         self._height        = 10.00
         self._title_name    = 'Simulation Setup Util'
         self._title         = '{title_name} v{version}'.format(title_name = self._title_name, version = __Version__)
@@ -887,7 +887,7 @@ class Gui(QtWidgets.QWidget, ui.UI):
         ########## SAVE / LOAD ##########
 
         self.save_load_layout = self.create_QGridLayout(w = self._width, nc = 3, parent = self.main_layout)
-        self.save_btn = self.create_QPushButton(text = 'Save', parent = self.save_load_layout, co = (0, 0))
+        self.save_btn = self.create_QPushButton(text = 'Save', parent = self.save_load_layout, co = (0, 0), c = self.save_cmd)
         self.load_btn = self.create_QPushButton(text = 'Load', parent = self.save_load_layout, co = (0, 1))
         self.clear_btn = self.create_QPushButton(text = 'Clear', parent = self.save_load_layout, co = (0, 2))
 
@@ -964,18 +964,15 @@ class Gui(QtWidgets.QWidget, ui.UI):
     ########## base functions ##########
     ####################################################################################
 
-    def load_cmd(self):
-        self.base_rig_data_load()
-        self.reference_data_load()
-        self.collider_data_load()
-
-    def get_data_path(self):
-        workspace = pm.workspace(q = True, fn = True)
-        data_path = workspace + '/data/simulation_setup_data/'
-        gen.create_dir(data_path)
-        return(data_path)
-
     def listWidget_info_add_cmd(self, QListWidget, data_name=None):
+
+        # selection_list = pm.ls(sl = True)
+        # selection_list.sort()
+        # item_list = self.get_QListWidget_items(QListWidget)
+        # for selection in selection_list:
+        #     if selection.fullPath() not in item_list:
+        #         QListWidget.addItem(selection.fullPath())
+        # QListWidget.sortItems()
 
         data_path = self.get_data_path()
         data_path += data_name
@@ -988,7 +985,7 @@ class Gui(QtWidgets.QWidget, ui.UI):
         item_list = self.get_QListWidget_items(QListWidget)
 
         for selection in selection_list:
-            selection_name = str(selection.stripNamespace())
+            selection_name = str(selection.nodeName())
             selection_full_path = str(selection.fullPath())
             if selection_name not in item_list:
                 QListWidget.addItem(selection_name)
@@ -997,11 +994,42 @@ class Gui(QtWidgets.QWidget, ui.UI):
             item_data_path = '{0}{1}.txt'.format(data_path, selection_name)
             gen.text_write(path = item_data_path, string = selection_full_path)
 
-    def listWidget_info_remove_cmd(self, QListWidget, data_name=None):
+            self.base_rig_data_save(name = selection_name, full_path = selection_full_path)
+
+    def listWidget_info_remove_cmd(self, QListWidget):
+        selection_list = self.get_QListWidget_selectedItem(QListWidget, raw = True)
+        for selection in selection_list:
+            (QListWidget.takeItem(QListWidget.row(selection)))
+
+    ####################################################################################
+    ########## BASE RIG ##########
+    ####################################################################################
+
+    def base_rig_info_add_btnCmd(self):
+        self.listWidget_info_add_cmd(QListWidget = self.base_rig_info_list, data_name = '010__data__base_rig')
+
+        # QListWidget = self.base_rig_info_list
+
+        # selection_list = pm.ls(sl = True)
+        # selection_list.sort()
+
+        # item_list = self.get_QListWidget_items(QListWidget)
+
+        # for selection in selection_list:
+        #     selection_name = selection.nodeName()
+        #     selection_full_path = selection.fullPath()
+        #     if selection_name not in item_list:
+        #         QListWidget.addItem(selection_name)
+
+        #     QListWidget.sortItems()
+        #     self.base_rig_data_save(name = selection_name, full_path = selection_full_path)
+
+    def base_rig_info_remove_btnCmd(self):
+
+        QListWidget = self.base_rig_info_list
 
         data_path = self.get_data_path()
-        data_path += data_name
-        data_path += '/'
+        data_path += '010__data__base_rig/'
         gen.create_dir(data_path)
 
         selected_item_raw_list = self.get_QListWidget_selectedItem(QListWidget, raw = True)
@@ -1012,11 +1040,12 @@ class Gui(QtWidgets.QWidget, ui.UI):
             item_path = '{0}{1}.txt'.format(data_path, item)
             os.remove(item_path)
 
-    def listWidget_info_clear_cmd(self, QListWidget, data_name=None):
+    def base_rig_info_clear_btnCmd(self):
+
+        QListWidget = self.base_rig_info_list
 
         data_path = self.get_data_path()
-        data_path += data_name
-        data_path += '/'
+        data_path += '010__data__base_rig/'
         gen.create_dir(data_path)
 
         item_list = self.get_QListWidget_items(QListWidget)
@@ -1025,41 +1054,6 @@ class Gui(QtWidgets.QWidget, ui.UI):
             os.remove(item_path)
 
         QListWidget.clear()
-
-    def listWidget_info_load_cmd(self, QListWidget, data_name=None):
-
-        data_path = self.get_data_path()
-        data_path += data_name
-        data_path += '/'
-        gen.create_dir(data_path)
-
-        item_raw_list = os.listdir(data_path)
-
-        item_list = []
-        for raw in item_raw_list:
-            item = raw.split('.txt')[0]
-            item_list.append(item)
-
-        item_list.sort()
-        QListWidget.clear()
-        for item in item_list:
-            QListWidget.addItem(item)
-
-    ####################################################################################
-    ########## BASE RIG ##########
-    ####################################################################################
-
-    def base_rig_info_add_btnCmd(self):
-        self.listWidget_info_add_cmd(QListWidget = self.base_rig_info_list, data_name = '010__data__base_rig')
-
-    def base_rig_info_remove_btnCmd(self):
-        self.listWidget_info_remove_cmd(QListWidget = self.base_rig_info_list, data_name = '010__data__base_rig')
-
-    def base_rig_info_clear_btnCmd(self):
-        self.listWidget_info_clear_cmd(QListWidget = self.base_rig_info_list, data_name = '010__data__base_rig')
-
-    def base_rig_data_load(self):
-        self.listWidget_info_load_cmd(QListWidget = self.base_rig_info_list, data_name = '010__data__base_rig')
 
     def base_rig_create_btnCmd(self):
 
@@ -1086,144 +1080,131 @@ class Gui(QtWidgets.QWidget, ui.UI):
 
         pm.undoInfo(closeChunk = True)
 
+    def base_rig_data_save(self, name=None, full_path=None):
+
+        name = str(name)
+        full_path = str(full_path)
+
+        data_path = self.get_data_path()
+        data_path += '010__data__base_rig/'
+        gen.create_dir(data_path)
+
+        item_data_path = '{0}{1}.txt'.format(data_path, name)
+        gen.text_write(path = item_data_path, string = full_path)
+
+    def base_rig_data_load(self):
+
+        QListWidget = self.base_rig_info_list
+
+        data_path = self.get_data_path()
+        data_path += '010__data__base_rig/'
+        gen.create_dir(data_path)
+
+        item_raw_list = os.listdir(data_path)
+
+        item_list = []
+        for raw in item_raw_list:
+            item = raw.split('.txt')[0]
+            item_list.append(item)
+
+        item_list.sort()
+        QListWidget.clear()
+        for item in item_list:
+            QListWidget.addItem(item)
+
     ####################################################################################
     ########## REFERENCE ##########
     ####################################################################################
 
     def reference_getInfo_btnCmd(self):
-        
         pm.undoInfo(openChunk = True)
-
-        data_path = self.get_data_path()
-        data_path += '020__data__reference'
-        data_path += '/'
-        gen.create_dir(data_path)
-
         # get edge
-
         raw_edge_list = pm.filterExpand(sm = 32)
         edge_list = []
-        
-        if not raw_edge_list:
-            pm.error('Please select 2 edges before proceeding')
-        else:
+        if raw_edge_list:
             for edge in raw_edge_list:
                 edge_list.append(edge.split('.')[-1])
-
-        if not len(edge_list) == 2:
-            pm.error('Please select 2 edges before proceeding')
+            self.reference_edge1_lineEdit.setText(edge_list[0])
+            self.reference_edge2_lineEdit.setText(edge_list[1])
         else:
-            edge_1 = edge_list[0]
-            edge_2 = edge_list[0]
-
-            edge_data_path = '{0}edges.txt'.format(data_path)
-            gen.text_write(path = edge_data_path, string = str([edge_1, edge_2]))
-
-            self.reference_edge1_lineEdit.setText(edge_1)
-            self.reference_edge2_lineEdit.setText(edge_2)
-
+            pm.error('Please select 2 edges before proceeding')
         # get object
-
         obj_shape = pm.ls(sl = True, o = True)[0]
         obj = pm.listRelatives(obj_shape, parent = True)[0]
-        
-        obj_name = obj.nodeName()
-        obj_full_path = obj.fullPath()
-
-        obj_data_path = '{0}obj.txt'.format(data_path)
-        gen.text_write(path = obj_data_path, string = str([obj_name, obj_full_path]))
-
-        self.reference_tfm_lineEdit.setText(obj_name)
-        
+        self.reference_tfm_lineEdit.setText(obj.fullPath())
         pm.undoInfo(closeChunk = True)
 
     def reference_create_btnCmd(self):
-
         pm.undoInfo(openChunk = True)
         # initiate
         utils_grp = gen.create_group(name = ssu.info_utils[0])
-
-        data_path = self.get_data_path()
-        data_path += '020__data__reference'
-        data_path += '/'
-        gen.create_dir(data_path)
-        
         # get info from the gui
         obj = self.reference_tfm_lineEdit.text()
-        obj_data_path = '{0}obj.txt'.format(data_path)
-        obj_data_text = gen.text_read(obj_data_path)
-        obj_data_list = eval(obj_data_text)
-        obj_name = obj_data_list[0]
-        obj_full_path = obj_data_list[1]
-
-        edge_1 = self.reference_edge1_lineEdit.text()
-        edge_2 = self.reference_edge2_lineEdit.text()
-        ssu.init_reference_loc(obj = obj_full_path, edge1 = edge_1, edge2 = edge_2)
-
+        edge1 = self.reference_edge1_lineEdit.text()
+        edge2 = self.reference_edge2_lineEdit.text()
+        ssu.init_reference_loc(obj = obj, edge1 = edge1, edge2 = edge2)
+        self.reference_data_save()
         pm.undoInfo(closeChunk = True)        
 
+    def reference_data_save(self):
+        data_path = self.get_data_path()
+        obj = self.reference_tfm_lineEdit.text()
+        edge1 = self.reference_edge1_lineEdit.text()
+        edge2 = self.reference_edge2_lineEdit.text()
+        data_dict = {}
+        data_dict['obj'] = obj
+        data_dict['edge1'] = edge1
+        data_dict['edge2'] = edge2
+        reference_data_path = '{0}020__data__reference.txt'.format(data_path)
+        gen.text_write(path = reference_data_path, string = data_dict)
+
     def reference_data_load(self):
-
         data_path = self.get_data_path()
-        data_path = self.get_data_path()
-        data_path += '020__data__reference'
-        data_path += '/'
-        gen.create_dir(data_path)
-
-        try:
-            obj_data_path = '{0}obj.txt'.format(data_path)
-            obj_data_text = gen.text_read(obj_data_path)
-            obj_data_list = eval(obj_data_text)
-            obj_name, obj_full_path = obj_data_list
-            self.reference_tfm_lineEdit.setText(obj_name)
-        except:
-            pass
-
-        try:
-            edges_data_path = '{0}edges.txt'.format(data_path)
-            edges_data_text = gen.text_read(edges_data_path)
-            edges_data_list = eval(edges_data_text)
-            edge_1, edge_2 = edges_data_list
-            self.reference_edge1_lineEdit.setText(edge_1)
-            self.reference_edge2_lineEdit.setText(edge_2)
-        except:
-            pass          
+        reference_data_path = '{0}020__data__reference.txt'.format(data_path)        
+        txt_txt = gen.text_read(path = reference_data_path)
+        if txt_txt:
+            data_dict = eval(txt_txt)
+            obj = data_dict['obj'] 
+            edge1 = data_dict['edge1']
+            edge2 = data_dict['edge2']
+            self.reference_tfm_lineEdit.setText(obj)
+            self.reference_edge1_lineEdit.setText(edge1)
+            self.reference_edge2_lineEdit.setText(edge2)            
 
     ####################################################################################
     ########## COLLIDER ##########
     ####################################################################################
 
     def collider_info_add_btnCmd(self):
-        self.listWidget_info_add_cmd(QListWidget = self.collider_info_list, data_name = '020__data__collider')
+        self.listWidget_info_add_cmd(self.collider_info_list)
 
     def collider_info_remove_btnCmd(self):
-        self.listWidget_info_remove_cmd(QListWidget = self.collider_info_list, data_name = '020__data__collider')
+        self.listWidget_info_remove_cmd(self.collider_info_list)
 
     def collider_info_clear_btnCmd(self):
-        self.listWidget_info_clear_cmd(QListWidget = self.collider_info_list, data_name = '020__data__collider')
+        self.collider_info_list.clear()
 
     def collider_create_btnCmd(self):
-        
         pm.undoInfo(openChunk = True)
-
-        data_path = self.get_data_path()
-        data_path += '020__data__collider/'
-        gen.create_dir(data_path)
-
-        item_raw_list = self.get_QListWidget_items(self.collider_info_list)
-        item_list = []
-        for raw in item_raw_list:
-            raw_path = ('{0}/{1}.txt'.format(data_path, raw))
-            item_full_path = gen.text_read(path = raw_path)
-            item = pm.PyNode(item_full_path)
-            item_list.append(item)
-
-        ssu.init_nRigid(target_list = item_list)
-
+        ssu.init_nRigid(target_list = self.get_QListWidget_items(self.collider_info_list))
+        self.save_cmd()
         pm.undoInfo(closeChunk = True)
 
+    def collider_data_save(self):
+        data_path = self.get_data_path()
+        item_list = self.get_QListWidget_items(self.collider_info_list)
+        collider_data_path = '{0}020__data__collider.txt'.format(data_path)
+        gen.text_write(path = collider_data_path, string = item_list)
+
     def collider_data_load(self):
-        self.listWidget_info_load_cmd(QListWidget = self.collider_info_list, data_name = '020__data__collider')
+        data_path = self.get_data_path()
+        collider_data_path = '{0}020__data__collider.txt'.format(data_path)
+        txt_txt = gen.text_read(path = collider_data_path)
+        if txt_txt:
+            item_list = eval(txt_txt)
+            self.collider_info_list.clear()
+            for item in item_list:
+                self.collider_info_list.addItem(item)
 
     ####################################################################################
     ########## REFERENCE ##########
@@ -1293,7 +1274,21 @@ class Gui(QtWidgets.QWidget, ui.UI):
 
     # save load
 
+    def get_data_path(self):
+        workspace = pm.workspace(q = True, fn = True)
+        data_path = workspace + '/data/simulation_setup_data/'
+        gen.create_dir(data_path)
+        return(data_path)
 
+    def save_cmd(self):
+        self.base_rig_data_save()
+        self.reference_data_save()
+        self.collider_data_save()
+
+    def load_cmd(self):
+        self.base_rig_data_load()
+        self.reference_data_load()
+        self.collider_data_load()
 
     ####################################################################################
     ####################################################################################

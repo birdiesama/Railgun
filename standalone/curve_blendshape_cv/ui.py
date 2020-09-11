@@ -1,28 +1,22 @@
 ################################################################################
-__Script__	= 'global_RG.ui.module.qt_ui'
+__Script__	= 'curve_blendshape_cv.ui'
 __Author__  = 'Weerapot Chaoman'
-__Version__ = 2.0
-__Date__    = 20200504
+__Date__    = 20200910
 ################################################################################
 import os, sys
 __self_name__   = os.path.basename(__file__)
 __self_path__   = ((os.path.realpath(__file__)).replace(__self_name__, '')).replace('\\', '/')
-__project__     = 'Railgun'
 ################################################################################
 import subprocess, webbrowser, re, inspect
 import pymel.core as pm
 import maya.OpenMayaUI as mui
 from collections import OrderedDict
 from colorsys import rgb_to_hsv, hsv_to_rgb
-try:
-    from global_RG.Qt import Qt, QtCore, QtGui, QtWidgets, QtCompat
-except:
-    cmd = 'from '
-    if __project__ in __self_path__:
-        cmd += __project__ + '.'
-    cmd += 'global_RG.Qt'
-    cmd += ' import Qt, QtCore, QtGui, QtWidgets, QtCompat'
-    exec(cmd)
+
+if not __self_path__ in sys.path:
+    sys.path.insert(0, __self_path__)
+
+from Qt import Qt, QtCore, QtGui, QtWidgets, QtCompat
 ################################################################################
 
 class Qt_UI(object):
@@ -427,3 +421,8 @@ class Qt_UI(object):
             else:
                 item_list.append(item.text())
         return(item_list)
+
+class UI(Qt_UI):
+    
+    def __init__(self, *args, **kwargs):
+        super(UI, self).__init__(*args, **kwargs)

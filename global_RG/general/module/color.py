@@ -94,6 +94,7 @@ class Color(object):
             shader.specularColor.set(0.15, 0.15, 0.15)
             shader.eccentricity.set(1.0)
             shader.specularRollOff.set(0.3)
+            shader.reflectivity.set(0)
 
             transparency_val = 0
             if transparency:
