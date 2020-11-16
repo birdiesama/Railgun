@@ -123,7 +123,7 @@ class QuickGui(_SpecialCase, _Url, _OpenDir, QtWidgets.QWidget, general.General,
         super(QuickGui, self).__init__(parent)
 
         self._ui            = 'quick_gui_ui'
-        self._width         = 900.00
+        self._width         = 1000.00
         self._height        = 800.00
         self._version       = __Version__
         self._title_name    = 'Quick Gui'
@@ -175,7 +175,7 @@ class QuickGui(_SpecialCase, _Url, _OpenDir, QtWidgets.QWidget, general.General,
         self._ignore_list = ['__init__.py', 'quickGui', 'html']
 
         self._module_list = ['global_RG', 'nucleus_RG', 'project_RG', 'qualoth_RG', 'test_RG', 'utils_RG', 'ziva_RG', 'external_RG']
-        self._general_module_list = ['utils_RG', 'nucleus_RG', 'external_RG', 'resource_RG', 'wip_RG']
+        self._general_module_list = ['utils_RG', 'nucleus_RG', 'external_RG', 'resource_RG', 'legacy_RG', 'wip_RG']
 
         ##################
         ''' WIKI '''
