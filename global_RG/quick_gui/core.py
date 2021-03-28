@@ -4,7 +4,7 @@ __Author__          = 'Weerapot Chaoman'
 __Version__         = 3.00
 __Date__            = 20200504
 ################################################################################
-import os, sys
+import os, sys, importlib, traceback
 __self_name__   = os.path.basename(__file__)
 __self_path__   = ((os.path.realpath(__file__)).replace(__self_name__, '')).replace('\\', '/')
 __project__     = 'Railgun'
@@ -24,7 +24,7 @@ for module_data in module_list:
     if parent:
         cmd += parent + '.'
     cmd += module + ' as ' + as_name + ';'
-    cmd += 'reload(' + as_name + ');'
+    cmd += 'importlib.reload(' + as_name + ');'
     exec(cmd)
 ################################################################################
 import subprocess, webbrowser, re, inspect
@@ -34,6 +34,7 @@ from collections import OrderedDict
 try:
     from global_RG.Qt import Qt, QtCore, QtGui, QtWidgets, QtCompat
 except:
+    #traceback.print_exc()
     cmd = 'from '
     if __project__ in __self_path__:
         cmd += __project__ + '.'
@@ -114,7 +115,7 @@ class _SpecialCase(object):
 
 def maya_main_window():
     main_window_ptr = mui.MQtUtil.mainWindow()
-    return QtCompat.wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
+    return QtCompat.wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
 
 class QuickGui(_SpecialCase, _Url, _OpenDir, QtWidgets.QWidget, general.General, ui.UI):
 
@@ -172,7 +173,7 @@ class QuickGui(_SpecialCase, _Url, _OpenDir, QtWidgets.QWidget, general.General,
             self._my_path += '/'
             self._splitter = self._project
 
-        self._ignore_list = ['__init__.py', 'quickGui', 'html']
+        self._ignore_list = ['__init__.py', '__pycache__', 'quickGui', 'html']
 
         self._module_list = ['global_RG', 'nucleus_RG', 'project_RG', 'qualoth_RG', 'test_RG', 'utils_RG', 'ziva_RG', 'external_RG']
         self._general_module_list = ['utils_RG', 'nucleus_RG', 'external_RG', 'resource_RG', 'legacy_RG', 'wip_RG']
@@ -289,21 +290,22 @@ class QuickGui(_SpecialCase, _Url, _OpenDir, QtWidgets.QWidget, general.General,
                     # Will determine how to create the cmd and button
                     try:
                         # if tool_name == 'general':
-                        exec('{cmd}.{tool_name} as gq_{tool_name}'.format(cmd = cmd, tool_name = tool_name))
-                        exec('tool_proxy = gq_{tool_name}'.format(tool_name = tool_name))
+                        exec('{cmd}.{tool_name} as gq_{tool_name}'.format(cmd = cmd, tool_name = tool_name), globals())
+                        exec('tool_proxy = gq_{tool_name}'.format(tool_name = tool_name), globals())
 
                         if not hasattr(tool_proxy, 'run'):
                             try:
-                                exec('{cmd}.{tool_name}.core as gq_{tool_name}'.format(cmd = cmd, tool_name = tool_name))
-                                exec('tool_proxy = gq_{tool_name}'.format(tool_name = tool_name))
+                                exec('{cmd}.{tool_name}.core as gq_{tool_name}'.format(cmd = cmd, tool_name = tool_name), globals())
+                                exec('tool_proxy = gq_{tool_name}'.format(tool_name = tool_name), globals())
                             except:
+                                traceback.print_exc()
                                 pass
 
-                        exec('reload(gq_{tool_name})'.format(tool_name = tool_name))
+                        exec('importlib.reload(gq_{tool_name})'.format(tool_name = tool_name), globals())
 
                         if hasattr(tool_proxy, 'run'):  # When the module has 'run', create this normally
                             cmd = 'btnCmd = gq_{tool_name}.run'.format(tool_name=tool_name)
-                            exec(cmd)
+                            exec(cmd, globals())
                             QPushButton = self.create_QPushButton(text = tool_nice_name, cmd = btnCmd, parent = QVBoxLayout)
                             print('>>>>>> [ {tool_name} ] auto connect successful'.format(tool_name=tool_name))
 
@@ -334,7 +336,7 @@ class QuickGui(_SpecialCase, _Url, _OpenDir, QtWidgets.QWidget, general.General,
                                 if orderControl_mo:
                                     btn_name = btn_name.replace(orderControl_mo[0], '')
                                 btn_name = self.compose_nice_name(btn_name.replace('_btnCmd', ''))
-                                exec('btn_cmd = gq_{tool_name}.{child_cmd}'.format(tool_name = tool_name, child_cmd = child_cmd))
+                                exec('btn_cmd = gq_{tool_name}.{child_cmd}'.format(tool_name = tool_name, child_cmd = child_cmd), globals())
                                 QPushButton = self.create_QPushButton(text = btn_name, cmd = btn_cmd)
                                 QPushButton_list.append(QPushButton)
 
@@ -342,6 +344,7 @@ class QuickGui(_SpecialCase, _Url, _OpenDir, QtWidgets.QWidget, general.General,
                             child_QGridLayout.setAlignment(QtCore.Qt.AlignTop)
 
                     except:  # When everything fail
+                        traceback.print_exc()
                         QPushButton = self.create_QPushButton(text = tool_nice_name, parent = QVBoxLayout)
                         QPushButton.setStyleSheet('background-color : black')
                         print('>>!!>> [ {tool_name} ] cannot be connected'.format(tool_name=tool_name))

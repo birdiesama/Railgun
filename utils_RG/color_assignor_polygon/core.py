@@ -1,10 +1,10 @@
 ################################################################################
 __Script__  = 'utils_RG.color_assignor_polygon.core'
 __Author__  = 'Weerapot Chaoman'
-__Version__	= 2.03
-__Date__    = 20200507
+__Version__	= 2.5
+__Date__    = 20210327
 ################################################################################
-import os, sys, subprocess, webbrowser, re, inspect
+import os, sys, subprocess, webbrowser, re, inspect, importlib
 import pymel.core as pm
 import pymel.all as pall
 import maya.OpenMayaUI as mui
@@ -30,7 +30,7 @@ for module_data in module_list:
     if parent:
         cmd += parent + '.'
     cmd += module + ' as ' + as_name + ';'
-    cmd += 'reload(' + as_name + ');'
+    cmd += 'importlib.reload(' + as_name + ');'
     exec(cmd)
 ################################################################################
 try:
@@ -84,8 +84,8 @@ class ColorAssignorPolygon(object):
         regex = re.compile(r'body|skin', re.IGNORECASE)
 
         for i in range (0, len(selection_list)):
-            print selection_list[i].nodeName()
-            print regex.findall(selection_list[i].nodeName())
+            #print selection_list[i].nodeName()
+            #print regex.findall(selection_list[i].nodeName())
             if regex.findall(selection_list[i].nodeName()):
                 gen.assign_poly_shader(target_list = selection_list[i], color_name = 'skin', transparency = transparency)
             else:
@@ -95,7 +95,7 @@ class ColorAssignorPolygon(object):
 
 def maya_main_window():
     main_window_ptr = mui.MQtUtil.mainWindow()
-    return QtCompat.wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
+    return QtCompat.wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
 
 class Gui(QtWidgets.QWidget, ColorAssignorPolygon, ui.UI):
 

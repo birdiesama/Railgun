@@ -18,13 +18,13 @@ class ComposeName(object):
     def __init__(self, *args, **kwargs):
         super(ComposeName, self).__init__(*args, **kwargs)
 
-    def list_remove_blank(self, list):
-        item_list = list
+    def list_remove_blank(self, target_list):
+        item_list = list(target_list)
         for item in item_list:
             if item == '':
-                item_list.remove('')
+                item_list.remove(item)
         return item_list
-
+            
     def list_remove_duplicate(self, list):
         item_list = list
         item_dict = OrderedDict.fromkeys(list)

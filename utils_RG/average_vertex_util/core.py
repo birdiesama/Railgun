@@ -1,10 +1,10 @@
 ################################################################################
 __Script__      = 'utils_RG.average_vertex_util.core'
 __Author__      = 'Weerapot Chaoman'
-__Version__     = 3.00
-__Date__        = 20200505
+__Version__     = 3.50
+__Date__        = 20210327
 ################################################################################
-import os, sys, subprocess, webbrowser, re, inspect
+import os, sys, subprocess, webbrowser, re, inspect, importlib
 import pymel.core as pm
 import pymel.all as pall
 import maya.OpenMayaUI as mui
@@ -30,7 +30,7 @@ for module_data in module_list:
     if parent:
         cmd += parent + '.'
     cmd += module + ' as ' + as_name + ';'
-    cmd += 'reload(' + as_name + ');'
+    cmd += 'importlib.reload(' + as_name + ');'
     exec(cmd)
 ################################################################################
 try:
@@ -53,7 +53,7 @@ av = AverageVertexUtil()
 
 def maya_main_window():
     main_window_ptr = mui.MQtUtil.mainWindow()
-    return QtCompat.wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
+    return QtCompat.wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
 
 class Gui(QtWidgets.QWidget, ui.UI):
 
@@ -159,7 +159,7 @@ class Gui(QtWidgets.QWidget, ui.UI):
         # self.clear_QWidget(self.main_tab_widget)
 
         for selection in selection_list:
-            print selection
+            print(selection)
             self.create_pav_tab(selection)
 
     def get_selected_items(self):
@@ -201,7 +201,6 @@ class Gui(QtWidgets.QWidget, ui.UI):
 
         selected_item_info = self.get_selected_items()
         mesh = selected_item_info[0]
-        # mesh_shape = av.get_visible_shape(mesh)
         selected_pav_list = selected_item_info[1]
 
         current_frame = pm.currentTime(query = True)
@@ -210,17 +209,15 @@ class Gui(QtWidgets.QWidget, ui.UI):
         # Attributes
         if not pm.attributeQuery('average_vtx_global', node = mesh, exists = True):
             mesh.addAttr('average_vtx_global', keyable = True, attributeType = 'float', max = 1, min = 0, dv = 1)
-        exec('global_amp_attr = mesh.average_vtx_global')
+        global_amp_attr = mesh.average_vtx_global
 
         name_sub_amp_attr = 'f{0}_'.format(current_frame)
         index = av.get_attribute_increment(mesh, name_sub_amp_attr)
         name_sub_amp_attr += str(index)
 
-        print name_sub_amp_attr
-
         mesh.addAttr(name_sub_amp_attr, keyable = True, attributeType = 'float', max = 10, min = 0, dv = 10)
-        exec('sub_amp_attr = mesh.{0}'.format(name_sub_amp_attr))
-
+        sub_amp_attr = getattr(mesh, name_sub_amp_attr)
+        
         name_amp = av.compose_snake_case(mesh.stripNamespace() + '_' + name_sub_amp_attr + '_mdv')
         if not pm.objExists(name_amp):
             amp = pm.createNode('multiplyDivide', name = name_amp)
@@ -295,7 +292,7 @@ class Gui(QtWidgets.QWidget, ui.UI):
         pm.undoInfo(closeChunk = True)
 
     def test_btnCmd(self):
-        print self.get_selected_items()
+        print(self.get_selected_items())
 
 def run():
     gui = Gui()

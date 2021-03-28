@@ -1,10 +1,10 @@
 ################################################################################
 __Script__		= 'utils_RG.color_assignor_outliner.core'
 __Author__		= 'Weerapot Chaoman'
-__Version__		= 3.20
-__Date__		= 20200506
+__Version__		= 3.50
+__Date__		= 20210327
 ################################################################################
-import os, sys
+import os, sys, importlib
 import pymel.core as pm
 import pymel.all as pall
 import maya.OpenMayaUI as mui
@@ -28,7 +28,7 @@ for module_data in module_list:
     if parent:
         cmd += parent + '.'
     cmd += module + ' as ' + as_name + ';'
-    cmd += 'reload(' + as_name + ');'
+    cmd += 'importlib.reload(' + as_name + ');'
     exec(cmd)
 ################################################################################
 try:
@@ -45,7 +45,7 @@ except:
 gen = general.General()
 def maya_main_window():
     main_window_ptr = mui.MQtUtil.mainWindow()
-    return QtCompat.wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
+    return QtCompat.wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
 
 class Gui(QtWidgets.QWidget, ui.UI):
 

@@ -1,10 +1,10 @@
 ################################################################################
 __Script__	= 'utils_RG.utils'
 __Author__	= 'Weerapot Chaoman'
-__Version__	= 4.10
-__Date__	= 20200512
+__Version__	= 4.50
+__Date__	= 20210327
 ################################################################################
-import os, sys, random, re
+import os, sys, random, re, importlib
 import pymel.core as pm
 import maya.OpenMaya as om
 import maya.OpenMayaUI as omui
@@ -33,7 +33,7 @@ for module_data in module_list:
     if parent:
         cmd += parent + '.'
     cmd += module + ' as ' + as_name + ';'
-    cmd += 'reload(' + as_name + ');'
+    cmd += 'importlib.reload(' + as_name + ');'
     exec(cmd)
 ################################################################################
 
@@ -51,8 +51,8 @@ def __001__cluster_group_btnCmd():
     gen.make_cluster_group(selection_list)
 
 def __005__get_driver_attr_btnCmd():
-    cAttr_driver_attr_list = []
     global cAttr_driver_attr_list
+    cAttr_driver_attr_list = []
     cAttr_driver_attr_list = gen.get_selected_attributes()
 
 def __006__connect_to_driven_attr_btnCmd():
@@ -72,9 +72,9 @@ def __010__copy_blendshape_weight_btnCmd(*args, **kwargs):
     # mesh_shape_list = pm.listConnections(blendshape_list, type = 'mesh', destination = True, source = False)
     blendshape = blendshape_list[0]
 
-    cBsn_bsn_data_list = []
     global cBsn_bsn_data_list
-
+    cBsn_bsn_data_list = []
+    
     for mesh_shape in mesh_shape_list:
         base_weight, iTarget_weight, src_total_vertices = gen.blendshape_get_weight(mesh_shape, blendshape)
         cBsn_bsn_data_list.append([base_weight, iTarget_weight, src_total_vertices])

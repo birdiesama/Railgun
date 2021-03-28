@@ -156,12 +156,12 @@ class Camera(object):
             attr_list = [attr_list]
 
         for attr in attr_list:
-            print attr, panel, enable
+            print(attr, panel, enable)
             try:
                 cmd = 'pm.modelEditor("{panel}", e = True, {attr} = {enable})'.format(panel = panel, attr = attr, enable = enable)
-                print cmd
+                print(cmd)
                 exec(cmd)
-                print cmd
+                print(cmd)
             except:
                 pass
 

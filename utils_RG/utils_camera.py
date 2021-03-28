@@ -1,10 +1,10 @@
 ################################################################################
 __Script__	= 'utils_RG.utils_camera'
 __Author__	= 'Weerapot Chaoman'
-__Version__ = 1.40
-__Date__	= 20200512
+__Version__ = 1.50
+__Date__	= 20210327
 ################################################################################
-import os, sys
+import os, sys, importlib
 import pymel.core as pm
 ################################################################################
 __self_name__   = os.path.basename(__file__)
@@ -30,7 +30,7 @@ for module_data in module_list:
     if parent:
         cmd += parent + '.'
     cmd += module + ' as ' + as_name + ';'
-    cmd += 'reload(' + as_name + ');'
+    cmd += 'importlib.reload(' + as_name + ');'
     exec(cmd)
 ################################################################################
 

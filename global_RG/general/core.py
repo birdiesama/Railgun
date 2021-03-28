@@ -4,7 +4,7 @@ __Author__      = 'Weerapot Chaoman'
 __Version__     = 6.00
 __Date__        = 20191212
 ################################################################################
-import os, sys
+import os, sys, importlib
 __self_name__   = os.path.basename(__file__)
 __self_path__   = ((os.path.realpath(__file__)).replace(__self_name__, '')).replace('\\', '/')
 __project__     = 'Railgun'
@@ -12,7 +12,7 @@ module_list = []
 module_list.append(['global_RG.general.module', 'alembic', 'alembic'])
 module_list.append(['global_RG.general.module', 'attribute', 'attribute'])
 module_list.append(['global_RG.general.module', 'average_vertex', 'average_vertex'])
-module_list.append(['global_RG.general.module', 'blendshape', 'blendshape'])
+#module_list.append(['global_RG.general.module', 'blendshape', 'blendshape'])
 module_list.append(['global_RG.general.module', 'camera', 'camera'])
 module_list.append(['global_RG.general.module', 'clean_up', 'clean_up'])
 module_list.append(['global_RG.general.module', 'color', 'color'])
@@ -45,7 +45,7 @@ for module_data in module_list:
     if parent:
         cmd += parent + '.'
     cmd += module + ' as ' + as_name + ';'
-    cmd += 'reload(' + as_name + ');'
+    cmd += 'importlib.reload(' + as_name + ');'
     exec(cmd)
 ################################################################################
 import random, re

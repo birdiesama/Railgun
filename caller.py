@@ -1,10 +1,11 @@
 import sys
+import importlib
 
-mp = r'D:\Dropbox\Script\PycharmProjects\Railgun'
+mp = r'C:\Users\birdi\Dropbox\Script\PycharmProjects\Railgun'
 
 if not mp in sys.path:
 	sys.path.insert(0, mp)
 
 import global_RG.quick_gui.core as qgui
-reload(qgui)
+importlib.reload(qgui)
 qgui.run()

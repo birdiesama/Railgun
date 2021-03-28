@@ -160,8 +160,8 @@ class Curve(object):
             cv_start = int(cv / 100.00 * lower_val)
             cv_end = int(cv / 100.00 * upper_val)
 
-            print cv_start
-            print cv_end
+            # print(cv_start)
+            # print(cv_end)
 
             if cv_start <= 1:
                 cv_start += 1
@@ -260,7 +260,7 @@ class Curve(object):
             pos = pm.pointOnCurve(driver, pr = 0)
             driver_pos_info.append([pos, driver])
 
-        print driver_pos_info
+        #print(driver_pos_info)
 
         pair_list = []
         for driven in driven_crv_list:

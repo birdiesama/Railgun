@@ -1,10 +1,10 @@
 ################################################################################
 __Script__	= 'utils_RG.curve_blendshape_cv.core'
 __Author__	= 'Weerapot Chaoman'
-__Version__ = 2.10
-__Date__	= 20200510
+__Version__ = 2.50
+__Date__	= 20210327
 ################################################################################
-import os, sys, subprocess, webbrowser, re, inspect
+import os, sys, subprocess, webbrowser, re, inspect, importlib
 import pymel.core as pm
 import maya.OpenMayaUI as mui
 from collections import OrderedDict
@@ -28,7 +28,7 @@ for module_data in module_list:
     if parent:
         cmd += parent + '.'
     cmd += module + ' as ' + as_name + ';'
-    cmd += 'reload(' + as_name + ');'
+    cmd += 'importlib.reload(' + as_name + ');'
     exec(cmd)
 ################################################################################
 try:
@@ -44,7 +44,7 @@ except:
 
 def maya_main_window():
 	main_window_ptr = mui.MQtUtil.mainWindow()
-	return QtCompat.wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
+	return QtCompat.wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
 
 class CvBlendshape(general.General):
 
@@ -177,14 +177,14 @@ class Gui(QtWidgets.QWidget, CvBlendshape, ui.UI):
 		self.delete_UI(self._ui)
 
 		self.setObjectName(self._ui)
- 		self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True) # destroy this widget when close
+		self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True) # destroy this widget when close
 		self.resize(self._width, self._height)
 		self.setWindowTitle(self._title)
 		self.setWindowFlags(QtCore.Qt.Window)
 		self.setWindowModality(QtCore.Qt.NonModal)
 		self.hair_diagram_image_path = __self_path__ + 'media/hair_CVBlendshape_hair.png'
 
- 		self.gui_init()
+		self.gui_init()
 
 	def gui_init(self):
 		self.main_layout = self.create_QHBoxLayout(parent = self)

@@ -4,7 +4,7 @@ __Author__      = 'Weerapot Chaoman'
 __Version__     = 1.00
 __Date__        = 20200504
 ################################################################################
-import os, sys
+import os, sys, importlib
 __self_name__   = os.path.basename(__file__)
 __self_path__   = ((os.path.realpath(__file__)).replace(__self_name__, '')).replace('\\', '/')
 __project__     = 'Railgun'
@@ -22,7 +22,7 @@ for module_data in module_list:
     if parent:
         cmd += parent + '.'
     cmd += module + ' as ' + as_name + ';'
-    cmd += 'reload(' + as_name + ');'
+    cmd += 'importlib.reload(' + as_name + ');'
     exec(cmd)
 ################################################################################
 import random, re
