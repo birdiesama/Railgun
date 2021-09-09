@@ -2,7 +2,7 @@
 __Script__      = 'utils_RG.average_vertex_util.core'
 __Author__      = 'Weerapot Chaoman'
 __Version__     = 3.50
-__Date__        = 20210327
+__Date__        = 2021
 ################################################################################
 import os, sys, subprocess, webbrowser, re, inspect, importlib
 import pymel.core as pm
