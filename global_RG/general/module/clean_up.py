@@ -39,6 +39,28 @@ class CleanUp(object):
         target = pm.PyNode(target)
         pm.xform(target, cp = True)
 
+    def quick_clean(self, target):
+
+        target = pm.PyNode(target)
+
+        tfm_list = pm.listRelatives(target, type = 'transform', ad = True) 
+        tfm_list.append(target)
+        tfm_list = list(set(tfm_list))
+        for tfm in tfm_list:
+            for attr in ['t', 'r', 's', 'v']:
+                if attr != 'v':
+                    for axis in ['x', 'y', 'z']:
+                        pm.setAttr('{0}.{1}{2}'.format(tfm.nodeName(), attr, axis), lock = False, channelBox = True)
+                        pm.setAttr('{0}.{1}{2}'.format(tfm.nodeName(), attr, axis), keyable = True)
+                else:
+                    pm.setAttr('{0}.{1}'.format(tfm.nodeName(), attr), lock = False, keyable = True, channelBox = True)
+                    pm.setAttr('{0}.{1}'.format(tfm.nodeName(), attr), keyable = True)
+
+        self.freeze_transform(target = target)
+        self.delete_history(target = target)
+
+        return(target)
+
     def list_connections(self, target, type):
         # list connections of the transform + it's shapes for specified connection type
         connection_list = []
@@ -334,12 +356,5 @@ class CleanUp(object):
 
         # return top node
         return(dup_target)
-
-
-
-
-
-
-
 
     # def copy_mesh_shape(self, driver, driven):

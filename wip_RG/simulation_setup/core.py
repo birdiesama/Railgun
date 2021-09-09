@@ -1,16 +1,24 @@
 ################################################################################
-__Script__		= 'utils_SP.simulation_setup.core'
+__Script__		= ''
 __Author__		= 'Weerapot Chaoman'
-__Version__		= 1.01
-__Date__		= 20191026
+__Version__		= 2.00
+__Date__		= 20210327
 ################################################################################
-import os, sys
+import os, sys, subprocess, webbrowser, re, inspect, importlib
+import pymel.core as pm
+import pymel.all as pall
+import maya.cmds as cmds
+import maya.OpenMayaUI as mui
+from collections import OrderedDict
+from random import shuffle
+################################################################################
 __self_name__   = os.path.basename(__file__)
 __self_path__   = ((os.path.realpath(__file__)).replace(__self_name__, '')).replace('\\', '/')
 __project__     = 'Snowpiercer'
+################################################################################
 module_list = []
-module_list.append(['utils_SP.general', 'core', 'general'])
-module_list.append(['utils_SP.general', 'ui', 'ui'])
+module_list.append(['global_RG.general', 'core', 'general'])
+module_list.append(['global_RG.ui', 'core', 'ui'])
 if __project__ in __self_path__:
     local_path = __self_path__.split(__project__)[0]
     if not local_path in sys.path:
@@ -23,41 +31,30 @@ for module_data in module_list:
     if parent:
         cmd += parent + '.'
     cmd += module + ' as ' + as_name + ';'
-    cmd += 'reload(' + as_name + ');'
+    cmd += 'importlib.reload(' + as_name + ');'
     exec(cmd)
 ################################################################################
-import maya.cmds as cmds
-import pymel.core as pm
-import os, re, sys
-from random import shuffle
-
 try:
-    from global_SP.Qt import Qt, QtCore, QtGui, QtWidgets, QtCompat
+    from global_RG.Qt import Qt, QtCore, QtGui, QtWidgets, QtCompat
 except:
     cmd = 'from '
     if __project__ in __self_path__:
         cmd += __project__ + '.'
-    cmd += 'global_SP.Qt'
+    cmd += 'global_RG.Qt'
     cmd += ' import Qt, QtCore, QtGui, QtWidgets, QtCompat'
     exec(cmd)
-import maya.OpenMayaUI as mui
-
-try:
-    from cs.pipeline.show import Show
-    from csmaya.core.meshcache.outputs import createMeshes
-except:
-    pass
-
+################################################################################
+#pm.undoInfo(openChunk = True)
+#pm.undoInfo(closeChunk = True)  
 ################################################################################
 
 class SimulationSetup(general.General):
 
     def __init__(self):
+
         super(SimulationSetup, self).__init__()
 
-        self.SHOW = Show().name
-
-        self.info_topNode   = ['rig', None]
+        self.info_topNode   = ['CFX', None]
 
         self.info_input         = ['INPUT', 'orange'] # 'INPUT_ANIM_GRP'
         self.info_input_layer   = ['_INPUT_', 'orange'] # '_input_anim_'
@@ -72,12 +69,24 @@ class SimulationSetup(general.General):
         self.name_mesh_cache    = 'input_anim_meshcache'
         self.name_cache_in      = 'input_anim_extract'
 
+        self.info_tPose_tfm     = ['tPose_tfm', None]
+
         self.info_sim_input         = ['sim_input', None]
         self.info_collider_input    = ['collider_input', None]
         self.info_collider_input_wrap = ['collider_input_wrap', None]
         self.info_cloth_input       = ['cloth_input', None]
         self.info_cloth_input_wrap  = ['cloth_input_wrap', None]
         self.info_nHair_input       = ['nHair_input', None]
+
+        self.info_ref = ['ref_loc_grp', None]
+        self.name_ref_fol = 'ref_fol'
+        self.name_ref_loc = 'ref_loc'
+
+        self.name_solver_mm_ref = 'solver_mm_loc'
+
+        self.name_BSH_anim_input    = 'name_BSH_anim_input'
+        self.name_BSH_anim_publish  = 'name_BSH_anim_publish'
+        self.name_BSH_tPose_input   = 'name_BSH_tPose_input'
 
         # SIM
         self.info_collider  = ['collider', None]
@@ -89,7 +98,12 @@ class SimulationSetup(general.General):
         self.info_nConstraint = ['nConstraint', None]
 
         # SUFFIX
-        self.suffix_cache_in    = 'ext'
+
+        # to receive cache
+        self.suffix_anim        = 'anim'
+        self.suffix_input       = 'input'
+        self.suffix_tPose       = 'tPose'
+
         self.suffix_cloth       = 'cloth'
         self.suffix_input_cloth = 'iCloth'
         self.suffix_col         = 'col'
@@ -122,10 +136,11 @@ class SimulationSetup(general.General):
         self.mono_color_list = ['black', 'dark_grey', 'grey', 'light_grey']
 
     def init_hierarchy(self):
-        if self.SHOW == 'TAF':
-            self.info_topNode[0] = 'master'
 
         top_node = self.create_group(name = self.info_topNode[0], color = self.info_topNode[1])
+        pm.addAttr(top_node, ln = 'start_frame', at = 'double', dv = 970, keyable = True)
+        pm.addAttr(top_node, ln = 'tPose_enable', attributeType = 'bool', dv = 1, keyable = True)
+        pm.addAttr(top_node, ln = 'tPose_amount', at = 'double', dv = 20, keyable = True)
 
         input   = self.create_group(name = self.info_input[0], color = self.info_input[1], parent = top_node)
         sim     = self.create_group(name = self.info_sim[0], color = self.info_sim[1], parent = top_node)
@@ -157,50 +172,150 @@ class SimulationSetup(general.General):
         rig_set = self.create_set(name = self.name_rig_set)
         pm.sets(rig_set, add = top_node)
 
-    def init_base_mesh_cache(self):
+    def init_base_rig(self, target=''):
 
         input   = self.create_group(name = self.info_input[0])
         publish = self.create_group(name = self.info_publish[0])
 
-        # get existing object set to see which one was created during the extract
-        existing_object_set_list = pm.ls(type = 'objectSet')
+        self.quick_clean(target)
+        
+        # group for connecting anim cache
+        target_anim    = self.quick_duplicate(target = target, suffix = self.suffix_anim, parent = input, color_list = self.mono_color_list)
 
-        # assuming there's only 1 mesh cache in the scene
-        mesh_cache_proxy = pm.ls(type = 'csMeshProxy')[0]
-        mesh_cache = mesh_cache_proxy.getParent()
-        mesh_cache.rename(self.name_mesh_cache)
-        mesh_cache.v.set(False)
+        # group for receiving target_anim deformation, with target_tPose deformation on top, sim_input also uses this group for wraps (since tPose is no good with spacing)
+        target_input   = self.quick_duplicate(target = target, suffix = self.suffix_input, parent = input, color_list = self.mono_color_list)
+        target_input.v.set(0)
 
-        pm.parent(mesh_cache, input)
+        # group for tPose network
+        tPose_tfm = self.create_group(name = self.info_tPose_tfm[0], color = self.info_tPose_tfm[1], parent = input)
+        tPose_tfm.v.set(0)
+        target_tPose   = self.quick_duplicate(target = target, suffix = self.suffix_tPose, parent = tPose_tfm, color_list = self.mono_color_list)
+        
+        # original geo for publish (cleaned), receives target_anim deformation
+        target_publish = pm.PyNode(target)
+        pm.parent(target_publish, publish)
 
-        input_extract   = self.extract_geo_from_mesh_cache(mesh_cache_proxy = mesh_cache_proxy, name = self.name_cache_in, suffix = self.suffix_cache_in, parent = input)
-
-        # deleting the excess object set
-        new_object_set_list = pm.ls(type = 'objectSet')
-        for object_set in new_object_set_list:
-            if object_set not in existing_object_set_list:
-                pm.delete(object_set)
-
-        self.skin_color = 'skin'
-        self.eye_color = 'white'
-        self.body_regex = re.compile(r'body|skin', re.IGNORECASE)
-        self.eye_regex = re.compile(r'eye|pupil|len', re.IGNORECASE)
-        self.eye_exception_regex = re.compile(r'eyelash|eyebrow', re.IGNORECASE)
-
-        # coloring input extract
-        color_list = self.mono_color_list
+        color_list = self.color_list
         shuffle(color_list)
-        mesh_shape_list = pm.listRelatives(input_extract, ad = True, type = 'mesh')
+
+        mesh_shape_list = pm.listRelatives(target_publish, ad = True, type = 'mesh')
         mesh_list = pm.listRelatives(mesh_shape_list, parent = True)
         mesh_list = list(set(mesh_list))
 
         for i in range(0, len(mesh_list)):
             mesh = mesh_list[i]
             color = color_list[i%len(color_list)]
-            if self.eye_regex.findall(str(mesh)):
+            if self.body_regex.findall(str(mesh)):
+                color = self.skin_color
+            elif self.eye_regex.findall(str(mesh)):
                 if not self.eye_exception_regex.findall(str(mesh)):
                     color = self.eye_color
             self.assign_poly_shader(target_list = mesh, color_name = color)
+
+        # blendshaping and organising
+        BSH_anim_input      = self.quick_blendshape(driver = target_anim, driven = target_input, name = self.name_BSH_anim_input)
+        BSH_anim_publish    = self.quick_blendshape(driver = target_anim, driven = target_publish, name = self.name_BSH_anim_publish)
+        BSH_tPose_input     = self.quick_blendshape(driver = target_tPose, driven = target_input, name = self.name_BSH_tPose_input)
+
+    
+    def init_tPose_network(self):
+
+        BSH_tPose_input = pm.PyNode(self.name_BSH_tPose_input)
+
+        top_node = self.create_group(name = self.info_topNode[0], color = self.info_topNode[1])
+        
+        #pm.addAttr(top_node, ln = 'start_frame', at = 'double', dv = 970, keyable = True)
+        #pm.addAttr(top_node, ln = 'tPose_enable', attributeType = 'bool', dv = 1, keyable = True)
+        #pm.addAttr(top_node, ln = 'tPose_amount', at = 'double', dv = 20, keyable = True)
+
+
+        '''
+        # tempt
+        #tempt_tfm = pm.group(em = True, name = 'tempt_tfm', w = True)
+        tempt_tfm = pm.ls(sl = True)[0]
+
+        for attr in ['t', 'r', 's']:
+            for axis in ['x', 'y', 'z']:
+                pm.setAttr('{0}.{1}{2}'.format(tempt_tfm.nodeName(), attr, axis), lock = True, keyable = False, channelBox = False)
+        pm.setAttr('{0}.v'.format(tempt_tfm.nodeName(), lock = True, keyable = False, channelBox = False))
+
+        pm.addAttr(tempt_tfm, ln = 'start_frame', at = 'double', dv = 970, keyable = True)
+        pm.addAttr(tempt_tfm, ln = 'preroll', at = 'double', dv = 20, keyable = True)
+        pm.addAttr(tempt_tfm, ln = 'bsn_value', at = 'double', dv = 0, keyable = True)
+        
+        # end frame
+        end_frame_pma = pm.createNode('plusMinusAverage', n = 'tPose__end_frame__pma')
+        end_frame_pma.op.set(1)
+        tempt_tfm.start_frame >> end_frame_pma.input1D[0] # tempt
+        tempt_tfm.preroll >> end_frame_pma.input1D[1] # tempt
+
+        # current frame var clamp
+        current_frame_clamp = pm.createNode('clamp', n = 'tPose__current_frame__clamp')
+        tempt_tfm.start_frame >> current_frame_clamp.minR # tempt
+        end_frame_pma.output1D >> current_frame_clamp.maxR
+        time_node = pm.ls(type = 'time')[0]
+        time_node.outTime >> current_frame_clamp.inputR
+
+        # calculate BSN value
+        bsn_val_per_unit_mdv = pm.createNode('multiplyDivide', n = 'tPose__bsn_val_per_unit__mdv')
+        bsn_val_per_unit_mdv.op.set(2)
+        bsn_val_per_unit_mdv.i1x.set(1)
+        tempt_tfm.preroll >> bsn_val_per_unit_mdv.i2x
+        
+        bsn_unit_pma = pm.createNode('plusMinusAverage', n = 'tPose__bsn_unit__pma')
+        bsn_unit_pma.op.set(2)
+        current_frame_clamp.outputR >> bsn_unit_pma.input1D[0]
+        tempt_tfm.start_frame >>  bsn_unit_pma.input1D[1] # tempt
+
+        bsn_val_mdv = pm.createNode('multiplyDivide', n = 'tPose__bsn_val__mdv')
+        bsn_val_mdv.op.set(1)
+        
+        bsn_val_per_unit_mdv.ox >> bsn_val_mdv.i1x
+        bsn_unit_pma.output1D >> bsn_val_mdv.i2x
+        
+        bsn_val_mdv.ox >> tempt_tfm.bsn_value # tempt
+
+        pm.select(tempt_tfm)
+        '''
+    
+
+    def init_reference_loc(self, obj, edge1, edge2):
+        # initiate vars
+        utils_grp = self.create_group(name = self.info_utils[0])
+        input_tPose = self.create_group(name = self.info_tPose_tfm[0])
+        obj = pm.PyNode(obj)
+        edge1 = pm.PyNode('{0}.{1}'.format(obj.fullPath(), edge1))
+        edge2 = pm.PyNode('{0}.{1}'.format(obj.fullPath(), edge2))
+        # get ref pos
+        pm.select(edge1, edge2)
+        cluster = pm.cluster()
+        ref_pos = pm.xform(cluster, q = True, ws = True, rp = True)
+        pm.delete(cluster)
+        # create ref_loc        
+        obj_ref = pm.duplicate(obj)[0]
+        obj_ref.rename('{0}_ref'.format(obj.nodeName()))
+        self.unlock_normal(target = obj_ref)
+        self.poly_soft_edge(target = obj_ref)
+        self.quick_blendshape(obj, obj_ref, prefix = True)
+        ref_fol = self.attach_fol_mesh(self.name_ref_fol, obj_ref, ref_pos)
+        ref_loc = self.create_locator(name = self.name_ref_loc)
+        point_con = pm.pointConstraint(ref_fol, ref_loc, mo = False, skip = 'none')
+        pm.delete(point_con)
+        par_con = pm.parentConstraint(ref_fol, ref_loc, mo = True, skipRotate = 'none', skipTranslate = 'none')
+        # organize
+        ref_grp = self.create_group(self.info_ref[0])
+        ref_grp.v.set(0)
+        pm.parent(ref_loc, ref_grp, utils_grp)
+        pm.parent(obj_ref, ref_fol, ref_grp)
+        self.lock_hide_attr(target = ref_grp)
+        self.lock_hide_attr(target = ref_loc, attr_list = ['s'])
+        # connect ref >> motion mult
+        solver_mm_ref = self.create_locator(name = self.name_solver_mm_ref)
+        ref_loc.t >> solver_mm_ref.t
+        ref_loc.r >> solver_mm_ref.r
+        # connect ref >> tPose      
+        self.quick_par_con(ref_loc, input_tPose, mo = True)
+        pm.select(clear = True)
 
     def init_output_mesh_cache(self):
 
@@ -220,12 +335,6 @@ class SimulationSetup(general.General):
             output_extract  = self.extract_geo_from_mesh_cache(mesh_cache_proxy = mesh_cache_proxy, parent = publish)
 
             pm.sets(mesh_cache_set, edit = True, fe = output_extract)
-            # if self.SHOW == 'LAK':
-            #     for node in output_extract:
-            #         if node.nodeName() == 'geo':
-            #             pm.sets(mesh_cache_set, edit = True, fe = node.getChildren())
-            # else:
-            #     pm.sets(mesh_cache_set, edit = True, fe = output_extract)
 
             # deleting the excess object set
             new_object_set_list = pm.ls(type = 'objectSet')
@@ -302,10 +411,10 @@ class SimulationSetup(general.General):
         for selection in selection_list:
 
             name_input_mesh = selection.nodeName()
-            if self.suffix_cache_in in name_input_mesh:
-                name_input_mesh = name_input_mesh.split('_' + self.suffix_cache_in)[0]
+            if self.suffix_input in name_input_mesh:
+                name_input_mesh = name_input_mesh.split('_' + self.suffix_input)[0]
 
-            input_mesh = pm.PyNode(name_input_mesh + '_' + self.suffix_cache_in)
+            input_mesh = pm.PyNode(name_input_mesh + '_' + self.suffix_input)
 
 
             col_mesh = self.clean_duplicate(selection)
@@ -322,26 +431,8 @@ class SimulationSetup(general.General):
             pm.parent(iCol_mesh, iCol_grp)
 
             self.quick_blendshape(driver = input_mesh, driven = iCol_mesh)
-            # if self.SHOW == 'LAK':
-            #     iCol_wrap_grp   = self.create_group(name = self.info_collider_input_wrap[0], parent = wrap_grp)
-            #     wrap, wrap_base = self.create_wrap(driver = input_mesh, driven = iCol_mesh)
-            #     pm.parent(wrap_base, iCol_wrap_grp)
-            # else:
-            #     self.quick_blendshape(driver = input_mesh, driven = iCol_mesh)
 
             self.quick_blendshape(driver = iCol_mesh, driven = col_mesh)
-
-            # if pm.objExists(name_input_mesh):
-            #     publish_mesh = pm.PyNode(name_input_mesh)
-            #     publish_deformer = self.quick_blendshape(driver = col_mesh, driven = publish_mesh)
-            #     # if self.SHOW == 'LAK':
-            #     #     publish_wrap_grp   = self.create_group(name = self.info_publish_wrap[0], parent = wrap_grp)
-            #     #     wrap, wrap_base = self.create_wrap(driver = col_mesh, driven = publish_mesh)
-            #     #     publish_deformer = wrap
-            #     #     pm.parent(wrap_base, publish_wrap_grp)
-            #     # else:
-            #     #     publish_deformer = self.quick_blendshape(driver = col_mesh, driven = publish_mesh)
-            #     publish.from_collider_deformer >> publish_deformer.en
 
         # nucleus 2/2
         if parent_nucleus_stat:
@@ -362,7 +453,7 @@ class SimulationSetup(general.General):
         if not nucleus_list:
             parent_nucleus_stat = True
 
-        self.init_output_mesh_cache()
+        #self.init_output_mesh_cache()
 
         input           = self.create_group(name = self.info_input[0])
         sim             = self.create_group(name = self.info_sim[0])
@@ -469,7 +560,7 @@ class SimulationSetup(general.General):
                     publish_mesh.v.disconnect()
                     publish_mesh.v.set(True)
 
-            cache_in_mesh_name = cloth_name + '_' + self.suffix_cache_in # Wrap to the highres from anim_input_extract
+            cache_in_mesh_name = cloth_name + '_' + self.suffix_input # Wrap to the highres from anim_input_extract
             if pm.objExists(cache_in_mesh_name):
                 cache_in_mesh = pm.PyNode(cache_in_mesh_name)
                 wrap_list, wrap_base_list = self.create_wrap(driver = cache_in_mesh, driven = input_cloth_mesh)
@@ -643,16 +734,20 @@ class SimulationSetup(general.General):
             pm.reorder(nucleus_list, front = True)
 
 ssu = SimulationSetup()
+gen = general.General()
 
 def maya_main_window():
     main_window_ptr = mui.MQtUtil.mainWindow()
-    return QtCompat.wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
+    return QtCompat.wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
 
 class Gui(QtWidgets.QWidget, ui.UI):
 
     def __init__(self, parent = maya_main_window(), *args, **kwargs):
 
         super(Gui, self).__init__(parent, *args, **kwargs)
+
+        self.workspace  = pm.workspace(q = True, fn = True)
+        self.data_path  = '{0}/{1}'.format(self.workspace, '/data/simulation_setup_1_data/')
 
         self._ui            = 'ui_simulation_set_up_util'
         self._width         = 400.00
@@ -675,10 +770,50 @@ class Gui(QtWidgets.QWidget, ui.UI):
 
         self.main_layout = self.create_QVBoxLayout(parent = self)
 
+        #####################
+        ''' Base Rig '''
+        #####################
+
+        self.nDynamic_label = self.create_QLabel(text = 'Base Rig', parent = self.main_layout, alignment = QtCore.Qt.AlignCenter)
+        font = self.nDynamic_label.font()
+        font.setPointSize(15)
+        font.setBold(True)
+        self.nDynamic_label.setFont(font)
+        self.create_QLabel(text = '- - - - -', parent = self.main_layout, alignment = QtCore.Qt.AlignCenter, word_wrap = True)
+
+        self.create_QLabel(text = 'Select target geo group', parent = self.main_layout, alignment = QtCore.Qt.AlignLeft)
+
+        self.target_layout = self.create_QGridLayout(w = self._width, nc = 2, cwp = (60, 40), parent = self.main_layout)
+
+        self.target_lineEdit = self.create_QLineEdit(read_only = True, parent = self.target_layout, co = (0, 0))
+        self.target_get_btn = self.create_QPushButton(text = 'Get Geo Group', parent = self.target_layout, co = (0, 1), c = self.target_get_btnCmd)
+
+        self.create_QLabel(text = ' ', parent = self.main_layout, alignment = QtCore.Qt.AlignLeft, word_wrap = True)
+
+        text = 'Select 2 edges on the geometry that you want motion_mult/t_pose to reference to.'
+        self.reference_label = self.create_QLabel(text = text, parent = self.main_layout, alignment = QtCore.Qt.AlignLeft, word_wrap = True)
+        self.reference_lineEdit_layout = self.create_QGridLayout(w = self._width, nc = 3, cwp = (60, 20, 20), parent = self.main_layout)
+
+        self.reference_tfm_label = self.create_QLabel(text = 'Transform', parent = self.reference_lineEdit_layout, alignment = QtCore.Qt.AlignCenter, word_wrap = True, co = (0, 0))
+        self.reference_edge1_label = self.create_QLabel(text = 'Edge 1', parent = self.reference_lineEdit_layout, alignment = QtCore.Qt.AlignCenter, word_wrap = True, co = (0, 1))
+        self.reference_edge2_label = self.create_QLabel(text = 'Edge 2', parent = self.reference_lineEdit_layout, alignment = QtCore.Qt.AlignCenter, word_wrap = True, co = (0, 2))
+
+        self.reference_tfm_lineEdit = self.create_QLineEdit(read_only = True, parent = self.reference_lineEdit_layout, co = (1, 0))
+        self.reference_edge1_lineEdit = self.create_QLineEdit(read_only = True, parent = self.reference_lineEdit_layout, co = (1, 1))
+        self.reference_edge2_lineEdit = self.create_QLineEdit(read_only = True, parent = self.reference_lineEdit_layout, co = (1, 2))
+
+        self.reference_getInfo_btn_layout = self.create_QGridLayout(w = self._width, nc = 2, cwp = (60, 40), parent = self.main_layout)
+        self.reference_getInfo_btn = self.create_QPushButton(parent = self.reference_getInfo_btn_layout, text = 'Get edges', c = self.reference_getInfo_btnCmd, co = (0, 1))
+
+        self.create_QLabel(text = ' ', parent = self.main_layout, alignment = QtCore.Qt.AlignLeft, word_wrap = True)
+
         self.create_base_rig_btn = self.create_QPushButton(text = 'Create Base Rig', parent = self.main_layout, c = self.create_base_rig_btnCmd)
 
+        #####################
+        ''' nDynamic '''
+        #####################
         self.create_separator(parent = self.main_layout)
-
+        
         self.nDynamic_label = self.create_QLabel(text = 'nDynamic', parent = self.main_layout, alignment = QtCore.Qt.AlignCenter)
         font = self.nDynamic_label.font()
         font.setPointSize(15)
@@ -734,6 +869,173 @@ class Gui(QtWidgets.QWidget, ui.UI):
         # nConstraint
         self.main_layout.setAlignment(QtCore.Qt.AlignTop)
 
+        self.load_cmd()
+
+    #####################
+    ''' Global Func '''
+    #####################
+
+    def get_data_path(self):
+        gen.create_dir(self.data_path)
+        return(self.data_path)
+
+    def load_cmd(self):
+        self.target_data_load()
+        self.reference_data_load()
+
+    #####################
+    ''' Base Rig Func '''
+    #####################
+
+    def target_get_btnCmd(self):
+
+        data_path = self.get_data_path()
+        data_path += '010__data__target'
+        data_path += '/'
+        gen.create_dir(data_path)
+
+        selection = pm.ls(sl = True)[0]
+
+        target_name = selection.nodeName()
+        target_full_path = selection.fullPath()
+
+        target_data_path = '{0}target.txt'.format(data_path)
+        gen.text_write(path = target_data_path, string = str([target_name, target_full_path]))
+
+        self.target_lineEdit.setText(target_name)
+
+    def target_data_load(self):
+
+        data_path = self.get_data_path()
+        data_path += '010__data__target'
+        data_path += '/'
+        gen.create_dir(data_path)
+
+        try:
+            target_data_path = '{0}target.txt'.format(data_path)
+            target_data_text = gen.text_read(target_data_path)
+            target_data_list = eval(target_data_text)
+            target_name, target_full_path = target_data_list
+            self.target_lineEdit.setText(target_name)
+        except:
+            pass
+
+    def reference_getInfo_btnCmd(self):
+        
+        pm.undoInfo(openChunk = True)
+
+        data_path = self.get_data_path()
+        data_path += '020__data__reference'
+        data_path += '/'
+        gen.create_dir(data_path)
+
+        # get edge
+
+        raw_edge_list = pm.filterExpand(sm = 32)
+        edge_list = []
+        
+        if not raw_edge_list:
+            pm.error('Please select 2 edges before proceeding')
+        else:
+            for edge in raw_edge_list:
+                edge_list.append(edge.split('.')[-1])
+
+        if not len(edge_list) == 2:
+            pm.error('Please select 2 edges before proceeding')
+        else:
+            edge_1 = edge_list[0]
+            edge_2 = edge_list[0]
+
+            edge_data_path = '{0}edges.txt'.format(data_path)
+            gen.text_write(path = edge_data_path, string = str([edge_1, edge_2]))
+
+            self.reference_edge1_lineEdit.setText(edge_1)
+            self.reference_edge2_lineEdit.setText(edge_2)
+
+        # get object
+
+        obj_shape = pm.ls(sl = True, o = True)[0]
+        obj = pm.listRelatives(obj_shape, parent = True)[0]
+        
+        obj_name = obj.nodeName()
+        obj_full_path = obj.fullPath()
+
+        obj_data_path = '{0}obj.txt'.format(data_path)
+        gen.text_write(path = obj_data_path, string = str([obj_name, obj_full_path]))
+
+        self.reference_tfm_lineEdit.setText(obj_name)
+        
+        pm.undoInfo(closeChunk = True) 
+
+    def reference_data_load(self):
+
+        data_path = self.get_data_path()
+        data_path += '020__data__reference'
+        data_path += '/'
+        gen.create_dir(data_path)
+
+        try:
+            obj_data_path = '{0}obj.txt'.format(data_path)
+            obj_data_text = gen.text_read(obj_data_path)
+            obj_data_list = eval(obj_data_text)
+            obj_name, obj_full_path = obj_data_list
+            self.reference_tfm_lineEdit.setText(obj_name)
+        except:
+            pass
+
+        try:
+            edges_data_path = '{0}edges.txt'.format(data_path)
+            edges_data_text = gen.text_read(edges_data_path)
+            edges_data_list = eval(edges_data_text)
+            edge_1, edge_2 = edges_data_list
+            self.reference_edge1_lineEdit.setText(edge_1)
+            self.reference_edge2_lineEdit.setText(edge_2)
+        except:
+            pass
+
+    def create_base_rig_btnCmd(self):
+
+        pm.undoInfo(openChunk = True)
+
+        ssu.init_hierarchy()
+
+        # target
+        data_path = self.get_data_path()
+        data_path += '010__data__target/target.txt'
+        target_data_txt = gen.text_read(data_path)
+        target_data_list = eval(target_data_txt)
+        target_name, target_full_path = target_data_list
+        target = pm.PyNode(target_full_path)
+        ssu.init_base_rig(target = target)
+
+        # reference loc
+        utils_grp = gen.create_group(name = ssu.info_utils[0])
+
+        data_path = self.get_data_path()
+        data_path += '020__data__reference'
+        data_path += '/'
+        gen.create_dir(data_path)
+
+        obj_data_path = '{0}obj.txt'.format(data_path)
+        obj_data_text = gen.text_read(obj_data_path)
+        obj_data_list = eval(obj_data_text)
+        obj_name, obj_full_path = obj_data_list
+        obj = pm.PyNode('{0}_{1}'.format(obj_name, ssu.suffix_anim))
+
+        edges_data_path = '{0}edges.txt'.format(data_path)
+        edges_data_text = gen.text_read(edges_data_path)
+        edges_data_list = eval(edges_data_text)
+        edge_1, edge_2 = edges_data_list
+
+        ssu.init_reference_loc(obj = obj, edge1 = edge_1, edge2 = edge_2)
+
+        pm.undoInfo(closeChunk = True)
+
+    #####################
+    ''' ??? Func '''
+    #####################
+
+
     def create_curve_from_guide_btnCmd(self):
         pm.undoInfo(openChunk = True)
         ssu.guide_to_curve()
@@ -744,11 +1046,7 @@ class Gui(QtWidgets.QWidget, ui.UI):
         ssu.ssu_create_nHair()
         pm.undoInfo(closeChunk = True)
 
-    def create_base_rig_btnCmd(self):
-        pm.undoInfo(openChunk = True)
-        ssu.init_hierarchy()
-        ssu.init_base_mesh_cache()
-        pm.undoInfo(closeChunk = True)
+
 
     def create_nRigid_btnCmd(self):
         pm.undoInfo(openChunk = True)

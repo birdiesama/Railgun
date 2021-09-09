@@ -1168,7 +1168,6 @@ class Gui(QtWidgets.QWidget, ui.UI):
     def reference_data_load(self):
 
         data_path = self.get_data_path()
-        data_path = self.get_data_path()
         data_path += '020__data__reference'
         data_path += '/'
         gen.create_dir(data_path)

@@ -13,7 +13,7 @@ from random import shuffle
 ################################################################################
 __self_name__   = os.path.basename(__file__)
 __self_path__   = ((os.path.realpath(__file__)).replace(__self_name__, '')).replace('\\', '/')
-__project__     = 'Snowpiercer'
+__project__     = 'Railgun'
 ################################################################################
 module_list = []
 module_list.append(['global_RG.general', 'core', 'general'])
