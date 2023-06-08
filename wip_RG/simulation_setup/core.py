@@ -112,7 +112,6 @@ class SimulationSetup(general.General):
         self.suffix_techAnim_highRes = 'highRes'
         self.suffix_folDriver = 'folDriver'
 
-
         # OUTPUT
         self.info_techAnim          = ['tech_anim', None]
         self.info_techAnim_lowRes   = ['low_res', None]
@@ -228,7 +227,6 @@ class SimulationSetup(general.General):
         #pm.addAttr(top_node, ln = 'tPose_enable', attributeType = 'bool', dv = 1, keyable = True)
         #pm.addAttr(top_node, ln = 'tPose_amount', at = 'double', dv = 20, keyable = True)
 
-
         '''
         # tempt
         #tempt_tfm = pm.group(em = True, name = 'tempt_tfm', w = True)
@@ -278,7 +276,6 @@ class SimulationSetup(general.General):
         pm.select(tempt_tfm)
         '''
     
-
     def init_reference_loc(self, obj, edge1, edge2):
         # initiate vars
         utils_grp = self.create_group(name = self.info_utils[0])
@@ -317,47 +314,48 @@ class SimulationSetup(general.General):
         self.quick_par_con(ref_loc, input_tPose, mo = True)
         pm.select(clear = True)
 
-    def init_output_mesh_cache(self):
+    ### removed
+    # def init_output_mesh_cache(self):
 
-        if not pm.objExists(self.name_mesh_cache_set):
+    #     if not pm.objExists(self.name_mesh_cache_set):
 
-            publish = self.create_group(name = self.info_publish[0])
+    #         publish = self.create_group(name = self.info_publish[0])
 
-            rig_set = self.create_set(name = self.name_rig_set)
-            mesh_cache_set = self.create_set(name = self.name_mesh_cache_set)
-            pm.sets(rig_set, edit = True, fe = mesh_cache_set)
+    #         rig_set = self.create_set(name = self.name_rig_set)
+    #         mesh_cache_set = self.create_set(name = self.name_mesh_cache_set)
+    #         pm.sets(rig_set, edit = True, fe = mesh_cache_set)
 
-            # get existing object set to see which one was created during the extract
-            existing_object_set_list = pm.ls(type = 'objectSet')
+    #         # get existing object set to see which one was created during the extract
+    #         existing_object_set_list = pm.ls(type = 'objectSet')
 
-            # assuming there's only 1 mesh cache in the scene
-            mesh_cache_proxy = pm.ls(type = 'csMeshProxy')[0]
-            output_extract  = self.extract_geo_from_mesh_cache(mesh_cache_proxy = mesh_cache_proxy, parent = publish)
+    #         # assuming there's only 1 mesh cache in the scene
+    #         mesh_cache_proxy = pm.ls(type = 'csMeshProxy')[0]
+    #         output_extract  = self.extract_geo_from_mesh_cache(mesh_cache_proxy = mesh_cache_proxy, parent = publish)
 
-            pm.sets(mesh_cache_set, edit = True, fe = output_extract)
+    #         pm.sets(mesh_cache_set, edit = True, fe = output_extract)
 
-            # deleting the excess object set
-            new_object_set_list = pm.ls(type = 'objectSet')
-            for object_set in new_object_set_list:
-                if object_set not in existing_object_set_list:
-                    pm.delete(object_set)
+    #         # deleting the excess object set
+    #         new_object_set_list = pm.ls(type = 'objectSet')
+    #         for object_set in new_object_set_list:
+    #             if object_set not in existing_object_set_list:
+    #                 pm.delete(object_set)
 
-            # coloring output extract
-            color_list = self.color_list
-            shuffle(color_list)
-            mesh_shape_list = pm.listRelatives(output_extract, ad = True, type = 'mesh')
-            mesh_list = pm.listRelatives(mesh_shape_list, parent = True)
-            mesh_list = list(set(mesh_list))
+    #         # coloring output extract
+    #         color_list = self.color_list
+    #         shuffle(color_list)
+    #         mesh_shape_list = pm.listRelatives(output_extract, ad = True, type = 'mesh')
+    #         mesh_list = pm.listRelatives(mesh_shape_list, parent = True)
+    #         mesh_list = list(set(mesh_list))
 
-            for i in range(0, len(mesh_list)):
-                mesh = mesh_list[i]
-                color = color_list[i%len(color_list)]
-                if self.body_regex.findall(str(mesh)):
-                    color = self.skin_color
-                elif self.eye_regex.findall(str(mesh)):
-                    if not self.eye_exception_regex.findall(str(mesh)):
-                        color = self.eye_color
-                self.assign_poly_shader(target_list = mesh, color_name = color)
+    #         for i in range(0, len(mesh_list)):
+    #             mesh = mesh_list[i]
+    #             color = color_list[i%len(color_list)]
+    #             if self.body_regex.findall(str(mesh)):
+    #                 color = self.skin_color
+    #             elif self.eye_regex.findall(str(mesh)):
+    #                 if not self.eye_exception_regex.findall(str(mesh)):
+    #                     color = self.eye_color
+    #             self.assign_poly_shader(target_list = mesh, color_name = color)
 
     def init_nucleus(self):
 
@@ -411,8 +409,11 @@ class SimulationSetup(general.General):
         for selection in selection_list:
 
             name_input_mesh = selection.nodeName()
-            if self.suffix_input in name_input_mesh:
-                name_input_mesh = name_input_mesh.split('_' + self.suffix_input)[0]
+
+            suffix_list = [self.suffix_input, self.suffix_anim]
+            for suffix in suffix_list:
+                if suffix in name_input_mesh:
+                    name_input_mesh = name_input_mesh.split('_' + suffix)[0]
 
             input_mesh = pm.PyNode(name_input_mesh + '_' + self.suffix_input)
 
